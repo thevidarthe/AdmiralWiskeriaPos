@@ -7,7 +7,7 @@ const withPWA = require('next-pwa')({
 
 /** @type {import('next').NextConfig} */
 const config = {
-  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+  output: process.env.EXPORT_STATIC === 'true' ? 'export' : undefined,
   reactStrictMode: true,
   images: {
     unoptimized: true,
