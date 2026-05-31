@@ -1,0 +1,32 @@
+-- Rollback de 001_init
+DROP TRIGGER IF EXISTS stock_items_updated_at ON stock_items;
+DROP TRIGGER IF EXISTS customers_updated_at ON customers;
+DROP TRIGGER IF EXISTS products_updated_at ON products;
+DROP TRIGGER IF EXISTS users_updated_at ON users;
+DROP TRIGGER IF EXISTS tenants_updated_at ON tenants;
+DROP FUNCTION IF EXISTS trg_set_updated_at;
+
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS message_logs;
+DROP TABLE IF EXISTS campaigns;
+DROP TABLE IF EXISTS message_templates;
+DROP TABLE IF EXISTS coupons;
+DROP TABLE IF EXISTS promotion_rule_products;
+DROP TABLE IF EXISTS promotion_rules;
+DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS sale_items;
+DROP TABLE IF EXISTS sales;
+DROP TABLE IF EXISTS shifts;
+DROP TABLE IF EXISTS loyalty_transactions;
+DROP TABLE IF EXISTS whatsapp_consents;
+DROP TABLE IF EXISTS customers;
+DROP TABLE IF EXISTS inventory_movements;
+DROP TABLE IF EXISTS stock_items;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS qr_codes;
+DROP TABLE IF EXISTS tables;
+DROP TABLE IF EXISTS zones;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS branches;
+DROP TABLE IF EXISTS tenants;

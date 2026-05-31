@@ -1,0 +1,54 @@
+node_modules\get-tsconfig\dist\index.d.cts:1052:		type IgnoreDeprecations = '5.0';
+node_modules\get-tsconfig\dist\index.d.cts:1864:		ignoreDeprecations?: CompilerOptions.IgnoreDeprecations;
+node_modules\get-tsconfig\dist\index.d.mts:1052:		type IgnoreDeprecations = '5.0';
+node_modules\get-tsconfig\dist\index.d.mts:1864:		ignoreDeprecations?: CompilerOptions.IgnoreDeprecations;
+node_modules\typescript\lib\tsc.js:6870:  Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprecations_Colon_2_to_silence_this_error: diag(5101, 1 /* Error */, "Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprec_5101", `Option '{0}' is deprecated and will stop functioning in TypeScript {1}. Specify compilerOption '"ignoreDeprecations": "{2}"' to silence this error.`),
+node_modules\typescript\lib\tsc.js:6872:  Invalid_value_for_ignoreDeprecations: diag(5103, 1 /* Error */, "Invalid_value_for_ignoreDeprecations_5103", "Invalid value for '--ignoreDeprecations'."),
+node_modules\typescript\lib\tsc.js:6876:  Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDeprecations_Colon_3_to_silence_this_error: diag(5107, 1 /* Error */, "Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDepr_5107", `Option '{0}={1}' is deprecated and will stop functioning in TypeScript {2}. Specify compilerOption '"ignoreDeprecations": "{3}"' to silence this error.`),
+node_modules\typescript\lib\tsc.js:35450:    name: "ignoreDeprecations",
+node_modules\typescript\lib\tsc.js:117540:  const reportInvalidIgnoreDeprecations = memoize(() => createOptionValueDiagnostic("ignoreDeprecations", Diagnostics.Invalid_value_for_ignoreDeprecations));
+node_modules\typescript\lib\tsc.js:120071:  function getIgnoreDeprecationsVersion() {
+node_modules\typescript\lib\tsc.js:120072:    const ignoreDeprecations = options.ignoreDeprecations;
+node_modules\typescript\lib\tsc.js:120073:    if (ignoreDeprecations) {
+node_modules\typescript\lib\tsc.js:120074:      if (ignoreDeprecations === "5.0") {
+node_modules\typescript\lib\tsc.js:120075:        return new Version(ignoreDeprecations);
+node_modules\typescript\lib\tsc.js:120077:      reportInvalidIgnoreDeprecations();
+node_modules\typescript\lib\tsc.js:120085:    const ignoreDeprecationsVersion = getIgnoreDeprecationsVersion();
+node_modules\typescript\lib\tsc.js:120087:    const canBeSilenced = !mustBeRemoved && ignoreDeprecationsVersion.compareTo(deprecatedInVersion) === -1 /* LessThan */;
+node_modules\typescript\lib\tsc.js:120098:            createDiagnostic(name, value, useInstead, Diagnostics.Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprecations_Colon_2_to_silence_this_error, name, removedIn, deprecatedIn);
+node_modules\typescript\lib\tsc.js:120100:            createDiagnostic(name, value, useInstead, Diagnostics.Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDeprecations_Colon_3_to_silence_this_error, name, value, removedIn, deprecatedIn);
+node_modules\typescript\lib\tsserver.js:10437:  Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprecations_Colon_2_to_silence_this_error: diag(5101, 1 /* Error */, "Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprec_5101", `Option '{0}' is deprecated and will stop functioning in TypeScript {1}. Specify compilerOption '"ignoreDeprecations": "{2}"' to silence this error.`),
+node_modules\typescript\lib\tsserver.js:10439:  Invalid_value_for_ignoreDeprecations: diag(5103, 1 /* Error */, "Invalid_value_for_ignoreDeprecations_5103", "Invalid value for '--ignoreDeprecations'."),
+node_modules\typescript\lib\tsserver.js:10443:  Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDeprecations_Colon_3_to_silence_this_error: diag(5107, 1 /* Error */, "Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDepr_5107", `Option '{0}={1}' is deprecated and will stop functioning in TypeScript {2}. Specify compilerOption '"ignoreDeprecations": "{3}"' to silence this error.`),
+node_modules\typescript\lib\tsserver.js:39885:    name: "ignoreDeprecations",
+node_modules\typescript\lib\tsserver.js:122509:  const reportInvalidIgnoreDeprecations = memoize(() => createOptionValueDiagnostic("ignoreDeprecations", Diagnostics.Invalid_value_for_ignoreDeprecations));
+node_modules\typescript\lib\tsserver.js:125040:  function getIgnoreDeprecationsVersion() {
+node_modules\typescript\lib\tsserver.js:125041:    const ignoreDeprecations = options.ignoreDeprecations;
+node_modules\typescript\lib\tsserver.js:125042:    if (ignoreDeprecations) {
+node_modules\typescript\lib\tsserver.js:125043:      if (ignoreDeprecations === "5.0") {
+node_modules\typescript\lib\tsserver.js:125044:        return new Version(ignoreDeprecations);
+node_modules\typescript\lib\tsserver.js:125046:      reportInvalidIgnoreDeprecations();
+node_modules\typescript\lib\tsserver.js:125054:    const ignoreDeprecationsVersion = getIgnoreDeprecationsVersion();
+node_modules\typescript\lib\tsserver.js:125056:    const canBeSilenced = !mustBeRemoved && ignoreDeprecationsVersion.compareTo(deprecatedInVersion) === -1 /* LessThan */;
+node_modules\typescript\lib\tsserver.js:125067:            createDiagnostic(name, value, useInstead, Diagnostics.Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprecations_Colon_2_to_silence_this_error, name, removedIn, deprecatedIn);
+node_modules\typescript\lib\tsserver.js:125069:            createDiagnostic(name, value, useInstead, Diagnostics.Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDeprecations_Colon_3_to_silence_this_error, name, value, removedIn, deprecatedIn);
+node_modules\typescript\lib\typescript.d.ts:7554:        ignoreDeprecations?: string;
+node_modules\typescript\lib\typescript.js:8207:        Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprecations_Colon_2_to_silence_this_error: diag(5101, 1 /* Error */, "Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprec_5101", `Option '{0}' is deprecated and will stop functioning in TypeScript {1}. Specify compilerOption '"ignoreDeprecations": "{2}"' to silence this error.`),
+node_modules\typescript\lib\typescript.js:8209:        Invalid_value_for_ignoreDeprecations: diag(5103, 1 /* Error */, "Invalid_value_for_ignoreDeprecations_5103", "Invalid value for '--ignoreDeprecations'."),
+node_modules\typescript\lib\typescript.js:8213:        Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDeprecations_Colon_3_to_silence_this_error: diag(5107, 1 /* Error */, "Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDepr_5107", `Option '{0}={1}' is deprecated and will stop functioning in TypeScript {2}. Specify compilerOption '"ignoreDeprecations": "{3}"' to silence this error.`),
+node_modules\typescript\lib\typescript.js:39380:          name: "ignoreDeprecations",
+node_modules\typescript\lib\typescript.js:120483:    const reportInvalidIgnoreDeprecations = memoize(() => createOptionValueDiagnostic("ignoreDeprecations", Diagnostics.Invalid_value_for_ignoreDeprecations));
+node_modules\typescript\lib\typescript.js:123014:    function getIgnoreDeprecationsVersion() {
+node_modules\typescript\lib\typescript.js:123015:      const ignoreDeprecations = options.ignoreDeprecations;
+node_modules\typescript\lib\typescript.js:123016:      if (ignoreDeprecations) {
+node_modules\typescript\lib\typescript.js:123017:        if (ignoreDeprecations === "5.0") {
+node_modules\typescript\lib\typescript.js:123018:          return new Version(ignoreDeprecations);
+node_modules\typescript\lib\typescript.js:123020:        reportInvalidIgnoreDeprecations();
+node_modules\typescript\lib\typescript.js:123028:      const ignoreDeprecationsVersion = getIgnoreDeprecationsVersion();
+node_modules\typescript\lib\typescript.js:123030:      const canBeSilenced = !mustBeRemoved && ignoreDeprecationsVersion.compareTo(deprecatedInVersion) === -1 /* LessThan */;
+node_modules\typescript\lib\typescript.js:123041:              createDiagnostic(name, value, useInstead, Diagnostics.Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprecations_Colon_2_to_silence_this_error, name, removedIn, deprecatedIn);
+node_modules\typescript\lib\typescript.js:123043:              createDiagnostic(name, value, useInstead, Diagnostics.Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDeprecations_Colon_3_to_silence_this_error, name, value, removedIn, deprecatedIn);
+node_modules\typescript\lib\typingsInstaller.js:6246:  Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprecations_Colon_2_to_silence_this_error: diag(5101, 1 /* Error */, "Option_0_is_deprecated_and_will_stop_functioning_in_TypeScript_1_Specify_compilerOption_ignoreDeprec_5101", `Option '{0}' is deprecated and will stop functioning in TypeScript {1}. Specify compilerOption '"ignoreDeprecations": "{2}"' to silence this error.`),
+node_modules\typescript\lib\typingsInstaller.js:6248:  Invalid_value_for_ignoreDeprecations: diag(5103, 1 /* Error */, "Invalid_value_for_ignoreDeprecations_5103", "Invalid value for '--ignoreDeprecations'."),
+node_modules\typescript\lib\typingsInstaller.js:6252:  Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDeprecations_Colon_3_to_silence_this_error: diag(5107, 1 /* Error */, "Option_0_1_is_deprecated_and_will_stop_functioning_in_TypeScript_2_Specify_compilerOption_ignoreDepr_5107", `Option '{0}={1}' is deprecated and will stop functioning in TypeScript {2}. Specify compilerOption '"ignoreDeprecations": "{3}"' to silence this error.`),
+node_modules\typescript\lib\typingsInstaller.js:27275:    name: "ignoreDeprecations",

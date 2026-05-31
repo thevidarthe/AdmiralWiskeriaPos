@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+
+# build
+/.next/
+/out/
+/build
+
+# env
+.env
+.env.local
+.env.development
+.env.production
+!.env.example
+
+# PWA generated
+public/sw.js
+public/sw.js.map
+public/workbox-*.js
+public/workbox-*.js.map
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# logs
+*.log
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

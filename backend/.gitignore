@@ -1,0 +1,38 @@
+# Build artifacts
+bin/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test artifacts
+*.test
+*.out
+coverage.html
+
+# Go cache / vendoring
+vendor/
+.air.toml
+
+# Environment (NUNCA comitear)
+.env
+.env.local
+.env.production
+!.env.example
+
+# Uploads (datos locales)
+uploads/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/

@@ -1,0 +1,269 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap');
+
+:root {
+  color-scheme: dark;
+}
+
+html, body {
+  background: theme('colors.admiral.night');
+  color: theme('colors.admiral.cream');
+  font-family: theme('fontFamily.sans');
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-image: theme('backgroundImage.navy-glow');
+  background-attachment: fixed;
+  min-height: 100vh;
+  transition: background-color 0.25s ease;
+  will-change: transform, opacity;
+}
+
+/* ── Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(232, 201, 106, 0.18);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(232, 201, 106, 0.32); }
+
+/* ── Componentes reutilizables ────────────────────────── */
+@layer components {
+  .glass {
+    backdrop-filter: blur(12px);
+    background-color: rgba(20, 36, 71, 0.4);
+    border: 1px solid rgba(232, 201, 106, 0.12);
+  }
+  .glass-strong {
+    backdrop-filter: blur(18px);
+    background-color: rgba(20, 36, 71, 0.7);
+    border: 1px solid rgba(232, 201, 106, 0.20);
+  }
+
+  .btn-gold {
+    @apply px-5 py-2.5 rounded-xl text-sm font-semibold text-admiral-night
+           bg-gold-shine shadow-gold-soft transition-all
+           hover:brightness-110 active:scale-[0.98] disabled:opacity-40
+           disabled:cursor-not-allowed disabled:hover:brightness-100;
+  }
+  .btn-ghost {
+    @apply px-4 py-2 rounded-xl text-sm font-medium border transition-all hover:text-admiral-gold;
+    color: rgba(232, 221, 196, 0.7);
+    border-color: rgba(232, 201, 106, 0.15);
+  }
+  .btn-ghost:hover {
+    border-color: rgba(232, 201, 106, 0.40);
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2.5 rounded-xl text-sm outline-none transition-all;
+    background-color: rgba(15, 27, 51, 0.5);
+    border: 1px solid rgba(232, 201, 106, 0.15);
+    color: #E8DDC4;
+  }
+  .input-field::placeholder {
+    color: #8C8473;
+  }
+  .input-field:focus {
+    border-color: rgba(232, 201, 106, 0.45);
+    box-shadow: 0 0 0 2px rgba(232, 201, 106, 0.15);
+  }
+
+  .label-mono {
+    @apply text-[10px] font-serif uppercase tracking-[0.18em];
+    color: rgba(232, 201, 106, 0.65);
+  }
+
+  .card-premium {
+    @apply rounded-2xl shadow-inner-deep p-5 relative overflow-hidden;
+    backdrop-filter: blur(12px);
+    background-color: rgba(20, 36, 71, 0.4);
+    border: 1px solid rgba(232, 201, 106, 0.12);
+  }
+  .card-premium::before {
+    content: '';
+    @apply absolute inset-x-0 top-0 h-px bg-hairline opacity-60;
+  }
+
+  .gold-text {
+    background: theme('backgroundImage.gold-shine');
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hairline {
+    @apply h-px bg-hairline opacity-50;
+  }
+
+  /* ── 3D & Neon Premium Utilities ── */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .card-3d {
+    transform-style: preserve-3d;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1), 
+                border-color 0.5s ease, 
+                background-color 0.5s ease;
+    transform: translate3d(0, 0, 0);
+  }
+
+  .card-3d:hover {
+    transform: translate3d(0, -10px, 30px) rotateX(7deg) rotateY(-5deg);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 
+                0 0 30px rgba(232, 201, 106, 0.35), 
+                0 0 60px rgba(0, 245, 212, 0.15);
+    border-color: rgba(232, 201, 106, 0.7);
+    background-color: rgba(25, 42, 81, 0.65);
+  }
+
+  .card-3d:active {
+    transform: translate3d(0, -2px, 5px) rotateX(2deg) rotateY(-1deg);
+    box-shadow: 0 10px 20px -8px rgba(0, 0, 0, 0.6), 
+                0 0 15px rgba(232, 201, 106, 0.2);
+  }
+
+  .btn-3d-glow {
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.4s ease, 
+                filter 0.4s ease;
+  }
+
+  .btn-3d-glow:hover {
+    transform: translate3d(0, -4px, 15px);
+    box-shadow: 0 15px 30px -5px rgba(232, 201, 106, 0.4), 
+                0 0 25px rgba(0, 245, 212, 0.3);
+    filter: brightness(1.15);
+  }
+
+  .btn-3d-glow:active {
+    transform: translate3d(0, -1px, 2px);
+    box-shadow: 0 5px 10px -2px rgba(232, 201, 106, 0.3);
+  }
+
+  .translate-z-10 {
+    transform: translateZ(10px);
+  }
+
+  .translate-z-20 {
+    transform: translateZ(20px);
+  }
+
+  .translate-z-30 {
+    transform: translateZ(30px);
+  }
+
+  /* Neon Ambient Glows */
+  .neon-glow-gold {
+    box-shadow: 0 0 40px 5px rgba(232, 201, 106, 0.25);
+  }
+
+  .neon-glow-cyan {
+    box-shadow: 0 0 45px 5px rgba(0, 245, 212, 0.2);
+  }
+
+  .neon-glow-purple {
+    box-shadow: 0 0 40px 5px rgba(123, 44, 191, 0.25);
+  }
+}
+
+/* ── Animaciones de pantalla ──────────────────────────── */
+.page-enter {
+  animation: rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.page-exit {
+  animation: fade-out 0.25s ease both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+/* ── Animaciones y efectos Premium para el Logo ── */
+@keyframes metallic-shine {
+  0% {
+    left: -150%;
+  }
+  15% {
+    left: 150%;
+  }
+  100% {
+    left: 150%;
+  }
+}
+
+.animate-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.animate-shine::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(245, 220, 142, 0.1) 0%,
+    rgba(245, 220, 142, 0.5) 45%,
+    rgba(255, 255, 255, 0.7) 50%,
+    rgba(245, 220, 142, 0.5) 55%,
+    rgba(245, 220, 142, 0.1) 100%
+  );
+  transform: skewX(-25deg);
+  animation: metallic-shine 7s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+@keyframes pulse-cyan-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 245, 212, 0.25), inset 0 0 10px rgba(0, 245, 212, 0.1);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 35px rgba(0, 245, 212, 0.55), inset 0 0 15px rgba(0, 245, 212, 0.25);
+    filter: brightness(1.1);
+  }
+}
+
+.neon-logo-glow {
+  animation: pulse-cyan-glow 4s ease-in-out infinite;
+}
+

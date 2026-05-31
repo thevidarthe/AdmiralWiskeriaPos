@@ -1,0 +1,15 @@
+bin/
+tmp/
+*.test
+*.out
+coverage.html
+.env
+.env.local
+*.log
+.idea/
+.vscode/
+node_modules/
+README.md
+.git
+.github
+docs/

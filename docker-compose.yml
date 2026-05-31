@@ -1,0 +1,92 @@
+# ════════════════════════════════════════════════════════════
+# Admiral Pro — desarrollo local con docker-compose
+# ════════════════════════════════════════════════════════════
+#
+# Uso:
+#   docker compose up -d            # levanta postgres + redis
+#   docker compose up -d backend    # levanta también el backend
+#   docker compose logs -f backend  # ver logs
+#   docker compose down             # detiene todo
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: admiral_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admiral
+      POSTGRES_PASSWORD: admiral_dev_password
+      POSTGRES_DB: admiral_pro
+    ports:
+      - '5432:5432'
+    volumes:
+      - admiral_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U admiral -d admiral_pro']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: admiral_redis
+    restart: unless-stopped
+    command: redis-server --requirepass admiral_dev_password
+    ports:
+      - '6379:6379'
+    volumes:
+      - admiral_redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'admiral_dev_password', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: admiral_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_ENV: development
+      APP_PORT: '4000'
+      DATABASE_URL: postgres://admiral:admiral_dev_password@postgres:5432/admiral_pro?sslmode=disable
+      REDIS_ADDR: redis:6379
+      REDIS_PASSWORD: admiral_dev_password
+      JWT_SECRET: dev-secret-please-replace-min-32-chars-for-production!!
+      FRONTEND_URL: http://localhost:3000,http://localhost:3001
+      DEFAULT_TENANT_SLUG: admiral
+      DEFAULT_TENANT_NAME: Admiral Whiskería
+      LOG_LEVEL: debug
+      LOG_FORMAT: pretty
+    ports:
+      - '4000:4000'
+    command: >
+      sh -c "./admiral-migrate up && ./admiral-seed && ./admiral-api"
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: admiral_n8n
+    restart: unless-stopped
+    ports:
+      - '5678:5678'
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - N8N_ENCRYPTION_KEY=admiral_n8n_secret_key_change_me_in_prod
+    volumes:
+      - admiral_n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres
+
+volumes:
+  admiral_pg_data:
+  admiral_redis_data:
+  admiral_n8n_data:

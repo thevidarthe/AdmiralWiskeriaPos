@@ -1,0 +1,9 @@
+{
+  "appId": "com.admiral.pro",
+  "appName": "Admiral Pro",
+  "webDir": "out",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
