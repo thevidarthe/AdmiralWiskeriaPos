@@ -58,7 +58,7 @@ services:
       REDIS_ADDR: redis:6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      FRONTEND_URL: http://localhost:3000,http://localhost:3001
+      FRONTEND_URL: http://localhost:3000,http://localhost:3001,http://localhost:3002
       DEFAULT_TENANT_SLUG: admiral
       DEFAULT_TENANT_NAME: Admiral Whiskería
       LOG_LEVEL: debug
