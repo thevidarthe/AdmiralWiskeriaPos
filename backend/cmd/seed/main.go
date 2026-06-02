@@ -49,11 +49,41 @@ func main() {
 
 	// Usuarios (passwords/PINs por defecto SOLO para entornos nuevos)
 	seedUsers := []seedUser{
-		{Email: "admin@admiral.co", Name: "Administrador", Role: domain.RoleAdmin, Pwd: "Admiral2026!", PIN: "1234"},
-		{Email: "andres@admiral.co", Name: "Andrés Ramírez", Role: domain.RoleBarista, Pwd: "Barista2026!", PIN: "1111"},
-		{Email: "juliana@admiral.co", Name: "Juliana Pérez", Role: domain.RoleWaiter, Pwd: "Mesero2026!", PIN: "2222"},
-		{Email: "camila@admiral.co", Name: "Camila Gómez", Role: domain.RoleWaiter, Pwd: "Mesero2026!", PIN: "2233"},
-		{Email: "ricardo@admiral.co", Name: "Ricardo López", Role: domain.RoleCashier, Pwd: "Cajero2026!", PIN: "3333"},
+		{
+			Email: "admin@admiral.co",
+			Name:  "Administrador",
+			Role:  domain.RoleAdmin,
+			Pwd:   getEnv("SEED_ADMIN_PASSWORD", "Admiral2026!"),
+			PIN:   getEnv("SEED_ADMIN_PIN", "1234"),
+		},
+		{
+			Email: "andres@admiral.co",
+			Name:  "Andrés Ramírez",
+			Role:  domain.RoleBarista,
+			Pwd:   getEnv("SEED_BARISTA_PASSWORD", "Barista2026!"),
+			PIN:   getEnv("SEED_BARISTA_PIN", "1111"),
+		},
+		{
+			Email: "juliana@admiral.co",
+			Name:  "Juliana Pérez",
+			Role:  domain.RoleWaiter,
+			Pwd:   getEnv("SEED_WAITER_PASSWORD", "Mesero2026!"),
+			PIN:   getEnv("SEED_WAITER_PIN", "2222"),
+		},
+		{
+			Email: "camila@admiral.co",
+			Name:  "Camila Gómez",
+			Role:  domain.RoleWaiter,
+			Pwd:   getEnv("SEED_CAMILA_PASSWORD", "Mesero2026!"),
+			PIN:   getEnv("SEED_CAMILA_PIN", "2233"),
+		},
+		{
+			Email: "ricardo@admiral.co",
+			Name:  "Ricardo López",
+			Role:  domain.RoleCashier,
+			Pwd:   getEnv("SEED_CASHIER_PASSWORD", "Cajero2026!"),
+			PIN:   getEnv("SEED_CASHIER_PIN", "3333"),
+		},
 	}
 	for _, su := range seedUsers {
 		upsertUser(gdb, tenant.ID, su)
@@ -127,12 +157,6 @@ func main() {
 	upsertCustomer(gdb, tenant.ID, "Ana Restrepo", "+573158765432", domain.LoyaltySilver, 1240, 820_000, 12)
 
 	fmt.Println("✅ Seed completo")
-	fmt.Println()
-	fmt.Println("  Accesos para entornos NUEVOS (cámbialos en producción):")
-	fmt.Println("  admin@admiral.co       / Admiral2026!   / PIN 1234")
-	fmt.Println("  andres@admiral.co      / Barista2026!   / PIN 1111")
-	fmt.Println("  juliana@admiral.co     / Mesero2026!    / PIN 2222")
-	fmt.Println("  ricardo@admiral.co     / Cajero2026!    / PIN 3333")
 	os.Exit(0)
 }
 
@@ -305,4 +329,11 @@ func capacityOf(i int) int {
 		return 4
 	}
 	return 6
+}
+
+func getEnv(key, fallback string) string {
+	if val, ok := os.LookupEnv(key); ok && val != "" {
+		return val
+	}
+	return fallback
 }

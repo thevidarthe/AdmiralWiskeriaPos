@@ -4,7 +4,7 @@
 ---
 
 [![Next.js](https://img.shields.io/badge/Next.js-14.2-black?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
-[![Go](https://img.shields.io/badge/Go-1.22-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.23-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
 [![Fiber](https://img.shields.io/badge/Fiber-v2-00F5D4?style=for-the-badge&logo=go&logoColor=00F5D4)](https://gofiber.io/)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
@@ -94,7 +94,7 @@ Hemos ejecutado las suites oficiales de validación estática de código e integ
 | Herramienta | Versión Requerida | Comando de Verificación |
 | :--- | :--- | :--- |
 | **Docker & Compose** | v24.0 o superior | `docker --version` |
-| **Go Compiler** | v1.22 o superior | `go version` |
+| **Go Compiler** | v1.23 o superior | `go version` |
 | **Node.js Runtime** | v20.0 o superior | `node -v` |
 | **npm Package Manager** | v10.0 o superior | `npm -v` |
 
