@@ -298,7 +298,7 @@ function AsistenciaScreen() {
                   <div className="w-10 h-10 rounded-full border border-admiral-gold/15 bg-admiral-navy/40 overflow-hidden flex-shrink-0 flex items-center justify-center relative">
                     {h.photoUrl ? (
                       <img
-                        src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}${h.photoUrl}`}
+                        src={`${(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000').replace('/api/v1', '')}${h.photoUrl}`}
                         alt="Auditoría"
                         className="w-full h-full object-cover"
                       />
