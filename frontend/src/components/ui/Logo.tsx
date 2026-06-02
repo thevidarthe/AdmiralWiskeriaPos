@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 interface LogoProps {
   size?: number;
@@ -37,29 +38,33 @@ export function Logo({
     </div>
   );
 
-  if (interactive) {
-    return (
-      <motion.div
-        animate={{ y: [0, -6, 0] }}
-        transition={{
-          duration: 5,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-        whileHover={{
-          scale: 1.05,
-          rotateY: 10,
-          rotateX: -5,
-          filter: 'brightness(1.1)',
-        }}
-        style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
-        className="cursor-pointer"
-      >
-        {content}
-      </motion.div>
-    );
-  }
+  const inner = interactive ? (
+    <motion.div
+      animate={{ y: [0, -6, 0] }}
+      transition={{
+        duration: 5,
+        repeat: Infinity,
+        ease: 'easeInOut',
+      }}
+      whileHover={{
+        scale: 1.05,
+        rotateY: 10,
+        rotateX: -5,
+        filter: 'brightness(1.1)',
+      }}
+      style={{ perspective: 1000, transformStyle: 'preserve-3d' }}
+      className="cursor-pointer"
+    >
+      {content}
+    </motion.div>
+  ) : (
+    <div className="cursor-pointer">{content}</div>
+  );
 
-  return content;
+  return (
+    <Link href="/" className="inline-block cursor-pointer focus:outline-none">
+      {inner}
+    </Link>
+  );
 }
 
