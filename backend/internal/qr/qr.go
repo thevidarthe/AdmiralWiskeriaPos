@@ -15,6 +15,7 @@ import (
 	"github.com/admiral/admiral-pro/pkg/httpx"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 	qrcode "github.com/skip2/go-qrcode"
 	"gorm.io/gorm"
 )
@@ -161,8 +162,8 @@ func (h *Handlers) RegisterPublic(r fiber.Router) {
 	r.Get("/resolve/:token", h.resolve)
 	r.Get("/menu/:token", h.publicMenu)
 	r.Post("/call-waiter/:token", h.callWaiter)
+	r.Post("/orders/:token", h.submitOrder)
 
-	// Cuenta Dividida Pública (QR de Mesas)
 	r.Get("/split/:token", h.getSplit)
 	r.Post("/split/:token", h.initiateSplit)
 	r.Post("/split/:token/pay/:shareId", h.payShare)
@@ -251,6 +252,123 @@ func (h *Handlers) callWaiter(c *fiber.Ctx) error {
 		return httpx.FromError(c, err)
 	}
 	return c.JSON(fiber.Map{"ok": true, "message": "Mesero notificado"})
+}
+
+type orderLineReq struct {
+	ProductID string  `json:"productId" validate:"required,uuid"`
+	Quantity  float64 `json:"quantity" validate:"required,gt=0"`
+}
+
+type submitOrderReq struct {
+	Lines []orderLineReq `json:"lines" validate:"required,min=1,dive"`
+	Notes string         `json:"notes,omitempty"`
+}
+
+func (h *Handlers) submitOrder(c *fiber.Ctx) error {
+	token := c.Params("token")
+	ctx := h.svc.ResolveToken
+
+	resolved, err := ctx(c.Context(), token)
+	if err != nil {
+		return httpx.NotFound(c, err.Error())
+	}
+
+	var dto submitOrderReq
+	if err := httpx.BindAndValidate(c, &dto); err != nil {
+		return err
+	}
+
+	var validProducts []domain.Product
+	productIDs := make([]string, len(dto.Lines))
+	for i, l := range dto.Lines {
+		productIDs[i] = l.ProductID
+	}
+	if err := h.svc.db.WithContext(c.Context()).
+		Where("id IN ? AND tenant_id = ? AND available = true", productIDs, resolved.TenantID).
+		Find(&validProducts).Error; err != nil {
+		return httpx.FromError(c, err)
+	}
+
+	if len(validProducts) != len(dto.Lines) {
+		return httpx.BadRequest(c, "Uno o más productos no son válidos o no están disponibles")
+	}
+
+	priceMap := make(map[string]decimal.Decimal)
+	for _, p := range validProducts {
+		priceMap[p.ID] = p.BasePrice
+	}
+
+	var existingSale *domain.Sale
+	var sale domain.Sale
+	saleErr := h.svc.db.WithContext(c.Context()).
+		Where("tenant_id = ? AND branch_id = ? AND table_id = ? AND status IN ?",
+			resolved.TenantID, resolved.BranchID, resolved.Table["id"],
+			[]domain.SaleStatus{domain.SaleOpen, domain.SalePendingPayment}).
+		First(&sale).Error
+
+	if saleErr == nil {
+		existingSale = &sale
+	}
+
+	if existingSale != nil {
+		lines := make([]pos.AddItemsLine, len(dto.Lines))
+		for i, l := range dto.Lines {
+			lines[i] = pos.AddItemsLine{
+				ProductID: l.ProductID,
+				Quantity:  l.Quantity,
+				UnitPrice: priceMap[l.ProductID],
+			}
+		}
+		updated, err := h.pos.AddItemsFromQR(c.Context(), existingSale.TenantID, existingSale.ID, lines)
+		if err != nil {
+			return httpx.FromError(c, err)
+		}
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"saleId": updated.ID,
+			"status": updated.Status,
+			"items":  len(updated.Items),
+			"total":  updated.GrandTotal,
+		})
+	}
+
+	openInput := pos.OpenSaleInput{
+		BranchID: resolved.BranchID,
+		TableID:  resolved.Table["id"],
+		Source:   domain.SourceQR,
+	}
+	newSale, err := h.pos.OpenSale(c.Context(), resolved.TenantID, "system", openInput)
+	if err != nil {
+		return httpx.FromError(c, err)
+	}
+
+	lines := make([]pos.AddItemsLine, len(dto.Lines))
+	for i, l := range dto.Lines {
+		lines[i] = pos.AddItemsLine{
+			ProductID: l.ProductID,
+			Quantity:  l.Quantity,
+			UnitPrice: priceMap[l.ProductID],
+		}
+	}
+	updated, err := h.pos.AddItemsFromQR(c.Context(), newSale.TenantID, newSale.ID, lines)
+	if err != nil {
+		return httpx.FromError(c, err)
+	}
+
+	h.svc.bus.Emit("order.created", map[string]any{
+		"tenantId":    resolved.TenantID,
+		"branchId":    resolved.BranchID,
+		"tableId":     resolved.Table["id"],
+		"tableNumber": resolved.Table["number"],
+		"saleId":      updated.ID,
+		"source":      "QR",
+	})
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
+		"saleId": updated.ID,
+		"status": updated.Status,
+		"items":  len(updated.Items),
+		"total":  updated.GrandTotal,
+	})
 }
 
 func (h *Handlers) getSplit(c *fiber.Ctx) error {

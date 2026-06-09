@@ -223,6 +223,63 @@ func (s *Service) AddItems(ctx context.Context, tenantID, saleID, userID string,
 	return updated, nil
 }
 
+type AddItemsLine struct {
+	ProductID string
+	Quantity  float64
+	UnitPrice decimal.Decimal
+}
+
+func (s *Service) AddItemsFromQR(ctx context.Context, tenantID, saleID string, lines []AddItemsLine) (*domain.Sale, error) {
+	sale, err := s.GetSale(ctx, tenantID, saleID)
+	if err != nil {
+		return nil, err
+	}
+	if sale.Status != domain.SaleOpen {
+		return nil, ErrSaleNotOpen
+	}
+
+	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for _, l := range lines {
+			var product domain.Product
+			if err := tx.First(&product, "id = ? AND tenant_id = ?", l.ProductID, tenantID).Error; err != nil {
+				return fmt.Errorf("producto %s no encontrado", l.ProductID)
+			}
+
+			unitPrice := product.BasePrice
+			qty := decimal.NewFromFloat(l.Quantity)
+			lineTotal := unitPrice.Mul(qty)
+
+			item := domain.SaleItem{
+				TenantID:    tenantID,
+				SaleID:      saleID,
+				ProductID:   l.ProductID,
+				ProductName: product.Name,
+				Quantity:    qty,
+				UnitPrice:   unitPrice,
+				Discount:    decimal.Zero,
+				TaxRate:     product.TaxRate,
+				LineTotal:   lineTotal,
+			}
+			if err := tx.Create(&item).Error; err != nil {
+				return err
+			}
+		}
+		return s.recalcTotals(ctx, tx, saleID)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	updated, _ := s.GetSale(ctx, tenantID, saleID)
+	s.bus.Emit("sale.itemsAdded", map[string]any{
+		"tenantId": tenantID,
+		"saleId":   saleID,
+		"addedBy":  "qr-customer",
+		"sale":     updated,
+	})
+	return updated, nil
+}
+
 // RemoveItem elimina una línea y recalcula totales.
 func (s *Service) RemoveItem(ctx context.Context, tenantID, saleID, itemID string) (*domain.Sale, error) {
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

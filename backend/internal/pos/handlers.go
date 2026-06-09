@@ -3,18 +3,20 @@ package pos
 import (
 	"errors"
 
+	"github.com/admiral/admiral-pro/internal/config"
 	"github.com/admiral/admiral-pro/internal/middleware"
 	"github.com/admiral/admiral-pro/pkg/httpx"
 	"github.com/gofiber/fiber/v2"
 )
 
-type Handlers struct{ svc *Service }
-
-func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
-
-func (h *Handlers) RegisterPublic(r fiber.Router) {
-	r.Post("/simulate-weather", h.simulateWeather)
+type Handlers struct {
+	svc *Service
+	cfg *config.Config
 }
+
+func NewHandlers(svc *Service, cfg *config.Config) *Handlers { return &Handlers{svc: svc, cfg: cfg} }
+
+func (h *Handlers) RegisterPublic(_ fiber.Router) {}
 
 func (h *Handlers) Register(r fiber.Router) {
 	r.Get("/sales", h.listOpen)
@@ -23,8 +25,11 @@ func (h *Handlers) Register(r fiber.Router) {
 	r.Post("/sales/:id/items", h.addItems)
 	r.Delete("/sales/:id/items/:itemId", h.removeItem)
 	r.Post("/sales/:id/close", h.close)
-	// Sólo ADMIN/MANAGER pueden cancelar
 	r.Post("/sales/:id/cancel", middleware.RequireRoles("ADMIN", "MANAGER"), h.cancel)
+
+	if h.cfg != nil && h.cfg.SimulateWeatherEnabled && !h.cfg.IsProd() {
+		r.Post("/simulate-weather", middleware.RequireRoles("ADMIN", "MANAGER"), h.simulateWeather)
+	}
 }
 
 func (h *Handlers) listOpen(c *fiber.Ctx) error {
@@ -127,18 +132,19 @@ func mapErr(c *fiber.Ctx, err error) error {
 }
 
 type SimulateWeatherInput struct {
-	TenantID    string  `json:"tenantId"`
 	Weather     string  `json:"weather"`
 	Temperature float64 `json:"temperature"`
 }
 
 func (h *Handlers) simulateWeather(c *fiber.Ctx) error {
+	u := middleware.CurrentUser(c)
+	if u == nil {
+		return httpx.Unauthorized(c, "Sesión inválida")
+	}
+
 	var in SimulateWeatherInput
 	if err := c.BodyParser(&in); err != nil {
 		return httpx.BadRequest(c, "body inválido")
-	}
-	if in.TenantID == "" {
-		in.TenantID = "7e8e42fd-8d4b-4ef2-89fe-acaf0916646a" // Default tenant
 	}
 	if in.Weather == "" {
 		in.Weather = "rainy"
@@ -152,15 +158,15 @@ func (h *Handlers) simulateWeather(c *fiber.Ctx) error {
 		"temperature": in.Temperature,
 	}
 
-	err := h.svc.EvaluateRules(c.Context(), in.TenantID, "weather.changed", eventData)
+	err := h.svc.EvaluateRules(c.Context(), u.TenantID, "weather.changed", eventData)
 	if err != nil {
 		return httpx.FromError(c, err)
 	}
 
 	return c.JSON(fiber.Map{
 		"status":    "success",
-		"message":   "Reglas de clima evaluadas con éxito en Sandoná, Nariño",
+		"message":   "Reglas de clima evaluadas con éxito",
 		"eventData": eventData,
-		"tenantId":  in.TenantID,
+		"tenantId":  u.TenantID,
 	})
 }

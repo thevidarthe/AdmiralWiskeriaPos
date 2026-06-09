@@ -195,14 +195,13 @@ func (h *Handlers) ClockInOut(c *fiber.Ctx) error {
 
 	branchID := c.FormValue("branchId")
 	if branchID == "" {
-		// Fallback dinámico buscando la primera sucursal activa del tenant
 		var firstBranch struct {
 			ID string
 		}
-		if err := h.svc.db.Table("branches").Select("id").Where("tenant_id = ? AND active = true", u.TenantID).First(&firstBranch).Error; err == nil {
+		if err := h.svc.db.Table("branches").Select("id").Where("tenant_id = ? AND active = true", u.TenantID).Order("created_at ASC").First(&firstBranch).Error; err == nil {
 			branchID = firstBranch.ID
 		} else {
-			branchID = "8f56207f-9721-4783-bdf3-117c182e588f" // Fallback duro a Sandoná
+			return httpx.BadRequest(c, "No se encontró ninguna sucursal activa para tu organización")
 		}
 	}
 

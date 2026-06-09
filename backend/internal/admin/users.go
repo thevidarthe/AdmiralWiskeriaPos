@@ -34,10 +34,23 @@ type UserUpdateInput struct {
 	PIN      string          `json:"pin,omitempty"`
 }
 
-func (s *UserService) List(ctx context.Context, tenantID string) ([]domain.User, error) {
+func (s *UserService) List(ctx context.Context, tenantID string, pg httpx.Pagination) (*httpx.PaginatedResult[domain.User], error) {
+	var total int64
+	if err := s.db.WithContext(ctx).Model(&domain.User{}).Where("tenant_id = ?", tenantID).Count(&total).Error; err != nil {
+		return nil, err
+	}
 	var users []domain.User
-	err := s.db.WithContext(ctx).Where("tenant_id = ?", tenantID).Order("name asc").Find(&users).Error
-	return users, err
+	err := s.db.WithContext(ctx).
+		Where("tenant_id = ?", tenantID).
+		Order("name asc").
+		Offset(pg.Offset()).
+		Limit(pg.PageSize).
+		Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	result := httpx.NewPaginatedResult(users, int(total), pg)
+	return &result, nil
 }
 
 func (s *UserService) Create(ctx context.Context, tenantID string, in UserInput) (*domain.User, error) {
@@ -137,7 +150,8 @@ func (h *UserHandlers) Register(r fiber.Router) {
 
 func (h *UserHandlers) list(c *fiber.Ctx) error {
 	u := middleware.CurrentUser(c)
-	out, err := h.svc.List(c.Context(), u.TenantID)
+	pg := httpx.ParsePagination(c)
+	out, err := h.svc.List(c.Context(), u.TenantID, pg)
 	if err != nil {
 		return httpx.FromError(c, err)
 	}

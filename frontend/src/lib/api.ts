@@ -6,6 +6,7 @@
  *   - Mostrar mensajes de error consistentes
  */
 import axios, { AxiosError } from 'axios';
+import type { Product, Category, Sale, Customer, User, Branch, QrMenuInfo, QrOrder, PaginatedResponse } from '@/types/api';
 
 export const apiBaseURL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
@@ -71,19 +72,22 @@ export const branchApi = {
 };
 
 export const menuApi = {
-  categories: () => api.get('/menu/categories'),
+  categories: () => api.get<Category[]>('/menu/categories'),
   products: (params?: { category?: string; branchId?: string }) =>
-    api.get('/menu/products', { params }),
+    api.get<Product[]>('/menu/products', { params }),
 };
 
 export const posApi = {
-  listOpen: (branchId: string) => api.get('/pos/sales', { params: { branchId } }),
-  get: (id: string) => api.get(`/pos/sales/${id}`),
-  open: (data: any) => api.post('/pos/sales', data),
-  addItems: (id: string, data: any) => api.post(`/pos/sales/${id}/items`, data),
-  close: (id: string, data: any) => api.post(`/pos/sales/${id}/close`, data),
+  listOpen: (branchId: string) => api.get<Sale[]>('/pos/sales', { params: { branchId } }),
+  get: (id: string) => api.get<Sale>(`/pos/sales/${id}`),
+  open: (data: { branchId: string; tableId?: string; source?: string }) =>
+    api.post<Sale>('/pos/sales', data),
+  addItems: (id: string, data: { lines: { productId: string; quantity: number }[] }) =>
+    api.post<Sale>(`/pos/sales/${id}/items`, data),
+  close: (id: string, data: { payments: { method: string; amount: number; reference?: string }[]; tipAmount?: number }) =>
+    api.post<Sale>(`/pos/sales/${id}/close`, data),
   cancel: (id: string, reason?: string) =>
-    api.post(`/pos/sales/${id}/cancel`, { reason }),
+    api.post<Sale>(`/pos/sales/${id}/cancel`, { reason }),
 };
 
 export const promoApi = {
@@ -96,29 +100,30 @@ export const promoApi = {
 
 export const adminApi = {
   products: {
-    list: (params: any) => api.get('/admin/products/', { params }),
-    create: (data: any) => api.post('/admin/products/', data),
-    update: (id: string, data: any) => api.put(`/admin/products/${id}`, data),
+    list: (params?: Record<string, unknown>) =>
+      api.get('/admin/products/', { params }),
+    create: (data: Record<string, unknown>) => api.post('/admin/products/', data),
+    update: (id: string, data: Record<string, unknown>) => api.put(`/admin/products/${id}`, data),
     toggle: (id: string) => api.put(`/admin/products/${id}/toggle`),
     delete: (id: string) => api.delete(`/admin/products/${id}`),
   },
   categories: {
     list: () => api.get('/admin/categories/'),
-    create: (data: any) => api.post('/admin/categories/', data),
-    update: (id: string, data: any) => api.put(`/admin/categories/${id}`, data),
+    create: (data: Record<string, unknown>) => api.post('/admin/categories/', data),
+    update: (id: string, data: Record<string, unknown>) => api.put(`/admin/categories/${id}`, data),
     delete: (id: string) => api.delete(`/admin/categories/${id}`),
   },
   inventory: {
     stock: (branchId?: string) => api.get('/admin/inventory/stock', { params: { branchId } }),
     lowStock: (branchId?: string) => api.get('/admin/inventory/low-stock', { params: { branchId } }),
     value: (branchId?: string) => api.get('/admin/inventory/value', { params: { branchId } }),
-    movement: (data: any) => api.post('/admin/inventory/movements', data),
-    physicalCount: (data: any) => api.post('/admin/inventory/physical-count', data),
+    movement: (data: Record<string, unknown>) => api.post('/admin/inventory/movements', data),
+    physicalCount: (data: Record<string, unknown>) => api.post('/admin/inventory/physical-count', data),
   },
   users: {
-    list: () => api.get('/admin/users/'),
-    create: (data: any) => api.post('/admin/users/', data),
-    update: (id: string, data: any) => api.put(`/admin/users/${id}`, data),
+    list: (params?: Record<string, unknown>) => api.get('/admin/users/', { params }),
+    create: (data: Record<string, unknown>) => api.post('/admin/users/', data),
+    update: (id: string, data: Record<string, unknown>) => api.put(`/admin/users/${id}`, data),
     resetPin: (id: string, pin: string) => api.put(`/admin/users/${id}/reset-pin`, { pin }),
     deactivate: (id: string) => api.delete(`/admin/users/${id}`),
   },
@@ -136,10 +141,10 @@ export const adminApi = {
 };
 
 export const crmApi = {
-  list: (params?: any) => api.get('/crm/customers', { params }),
-  get: (id: string) => api.get(`/crm/customers/${id}`),
-  upsert: (data: any) => api.post('/crm/customers', data),
-  consent: (id: string, data: any) => api.put(`/crm/customers/${id}/consent`, data),
+  list: (params?: Record<string, unknown>) => api.get('/crm/customers', { params }),
+  get: (id: string) => api.get<Customer>(`/crm/customers/${id}`),
+  upsert: (data: Record<string, unknown>) => api.post('/crm/customers', data),
+  consent: (id: string, data: Record<string, unknown>) => api.put(`/crm/customers/${id}/consent`, data),
 };
 
 export const reportsApi = {
@@ -154,13 +159,14 @@ export const qrApi = {
   generate: (branchId: string, tableId: string) =>
     api.post('/qr/codes', { branchId, tableId }),
   generateAll: (branchId: string) => api.post('/qr/codes/generate-all', { branchId }),
-  // públicos
-  resolve: (token: string) => api.get(`/qr/resolve/${token}`),
-  menu: (token: string) => api.get(`/qr/menu/${token}`),
+  resolve: (token: string) => api.get<{ tenantId: string; branchId: string; table: { id: string; number: string } }>(`/qr/resolve/${token}`),
+  menu: (token: string) => api.get<QrMenuInfo>(`/qr/menu/${token}`),
   callWaiter: (token: string) => api.post(`/qr/call-waiter/${token}`),
-  // Cuenta Dividida
+  submitOrder: (token: string, lines: { productId: string; quantity: number }[], notes?: string) =>
+    api.post<QrOrder>(`/qr/orders/${token}`, { lines, notes }),
   getSplit: (token: string) => api.get(`/qr/split/${token}`),
-  initiateSplit: (token: string, shares: any[]) => api.post(`/qr/split/${token}`, { shares }),
+  initiateSplit: (token: string, shares: { name: string; phone: string; amount: number }[]) =>
+    api.post(`/qr/split/${token}`, { shares }),
   payShare: (token: string, shareId: string, method: string, reference?: string) =>
     api.post(`/qr/split/${token}/pay/${shareId}`, { method, reference }),
 };

@@ -176,8 +176,10 @@ Utiliza los siguientes perfiles pre-configurados para explorar las diferentes in
 | Correo Electrónico | Contraseña de Acceso | Código PIN | Rol de Acceso | Permisos y Pantallas |
 | :--- | :--- | :--- | :--- | :--- |
 | `admin@admiral.co` | `Admiral2026!` | `1234` | **ADMIN** | Configuración, Inventarios, Empleados, Webhooks y POS |
-| `andres@admiral.co` | `Barista2026!` | `1111` | **BARISTA** | Dashboard del local y POS de barra |
-| `juliana@admiral.co` | `Mesero2026!` | `2222` | **WAITER** | Control de mesas, comandas digitales y asistencia |
+| `barista@admiral.co` | `Barista2026!` | `1111` | **BARISTA** | Dashboard del local y POS de barra |
+| `mesero@admiral.co` | `Mesero2026!` | `2222` | **WAITER** | Control de mesas, comandas digitales y asistencia (Mesero 1) |
+| `mesero2@admiral.co` | `Mesero2026!` | `2233` | **WAITER** | Control de mesas, comandas digitales y asistencia (Mesero 2) |
+| `cajero@admiral.co` | `Cajero2026!` | `3333` | **CASHIER** | Terminal POS de caja y facturación |
 
 ---
 

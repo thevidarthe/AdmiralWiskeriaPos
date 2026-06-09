@@ -47,6 +47,27 @@ func main() {
 	upsertTable(gdb, tenant.ID, branch.ID, zoneBar.ID, "B1", 8)
 	upsertTable(gdb, tenant.ID, branch.ID, zoneVip.ID, "VIP-A", 12)
 
+	// Limpiar posibles usuarios nuevos duplicados creados en ejecuciones anteriores antes de renombrar
+	gdb.Where("email IN ?", []string{
+		"barista@admiral.co",
+		"mesero@admiral.co",
+		"mesero2@admiral.co",
+		"cajero@admiral.co",
+	}).Delete(&domain.User{})
+
+	// Actualizar usuarios existentes basados en nombres propios para dejar solo los cargos (evita violación de llaves foráneas)
+	userUpdates := map[string]struct{ Name, Email string }{
+		"andres@admiral.co":  {Name: "Barista", Email: "barista@admiral.co"},
+		"juliana@admiral.co": {Name: "Mesero", Email: "mesero@admiral.co"},
+		"camila@admiral.co":  {Name: "Mesero 2", Email: "mesero2@admiral.co"},
+		"ricardo@admiral.co": {Name: "Cajero", Email: "cajero@admiral.co"},
+	}
+	for oldEmail, up := range userUpdates {
+		gdb.Model(&domain.User{}).Where("email = ?", oldEmail).Updates(map[string]interface{}{
+			"name":  up.Name,
+			"email": up.Email,
+		})
+	}
 	// Usuarios (passwords/PINs por defecto SOLO para entornos nuevos)
 	seedUsers := []seedUser{
 		{
@@ -57,29 +78,29 @@ func main() {
 			PIN:   getEnv("SEED_ADMIN_PIN", "1234"),
 		},
 		{
-			Email: "andres@admiral.co",
-			Name:  "Andrés Ramírez",
+			Email: "barista@admiral.co",
+			Name:  "Barista",
 			Role:  domain.RoleBarista,
 			Pwd:   getEnv("SEED_BARISTA_PASSWORD", "Barista2026!"),
 			PIN:   getEnv("SEED_BARISTA_PIN", "1111"),
 		},
 		{
-			Email: "juliana@admiral.co",
-			Name:  "Juliana Pérez",
+			Email: "mesero@admiral.co",
+			Name:  "Mesero",
 			Role:  domain.RoleWaiter,
 			Pwd:   getEnv("SEED_WAITER_PASSWORD", "Mesero2026!"),
 			PIN:   getEnv("SEED_WAITER_PIN", "2222"),
 		},
 		{
-			Email: "camila@admiral.co",
-			Name:  "Camila Gómez",
+			Email: "mesero2@admiral.co",
+			Name:  "Mesero 2",
 			Role:  domain.RoleWaiter,
-			Pwd:   getEnv("SEED_CAMILA_PASSWORD", "Mesero2026!"),
-			PIN:   getEnv("SEED_CAMILA_PIN", "2233"),
+			Pwd:   getEnv("SEED_WAITER2_PASSWORD", getEnv("SEED_CAMILA_PASSWORD", "Mesero2026!")),
+			PIN:   getEnv("SEED_WAITER2_PIN", getEnv("SEED_CAMILA_PIN", "2233")),
 		},
 		{
-			Email: "ricardo@admiral.co",
-			Name:  "Ricardo López",
+			Email: "cajero@admiral.co",
+			Name:  "Cajero",
 			Role:  domain.RoleCashier,
 			Pwd:   getEnv("SEED_CASHIER_PASSWORD", "Cajero2026!"),
 			PIN:   getEnv("SEED_CASHIER_PIN", "3333"),

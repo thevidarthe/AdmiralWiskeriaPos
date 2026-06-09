@@ -15,7 +15,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/admiral/admiral-pro/internal/domain"
@@ -33,6 +35,7 @@ type Config struct {
 	WebhookVerifyToken string
 	AppSecret          string
 	APIVersion         string
+	DefaultTenantID    string
 }
 
 type Service struct {
@@ -44,7 +47,26 @@ type Service struct {
 func NewService(db *gorm.DB, bus *event.Bus, cfg Config) *Service {
 	s := &Service{db: db, bus: bus, cfg: cfg}
 	bus.On("sale.closed", s.onSaleClosed)
+	bus.On("whatsapp.inbound", s.onInboundMessage)
 	return s
+}
+
+func (s *Service) onInboundMessage(payload any) {
+	data, ok := payload.(map[string]any)
+	if !ok {
+		return
+	}
+	tenantID, _ := data["tenantId"].(string)
+	conversationID, _ := data["conversationId"].(string)
+	phone, _ := data["phone"].(string)
+	body, _ := data["body"].(string)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := s.HandleInboundMessage(ctx, tenantID, conversationID, phone, body); err != nil {
+		slog.Error("bot: inbound error", "phone", phone, "err", err)
+	}
 }
 
 // ─── DTOs ─────────────────────────────────────────────────────
@@ -79,10 +101,23 @@ func (s *Service) CreateCampaign(ctx context.Context, tenantID string, in Campai
 	return &c, err
 }
 
-func (s *Service) ListCampaigns(ctx context.Context, tenantID string) ([]domain.Campaign, error) {
+func (s *Service) ListCampaigns(ctx context.Context, tenantID string, pg httpx.Pagination) (*httpx.PaginatedResult[domain.Campaign], error) {
+	var total int64
+	if err := s.db.WithContext(ctx).Model(&domain.Campaign{}).Where("tenant_id = ?", tenantID).Count(&total).Error; err != nil {
+		return nil, err
+	}
 	var out []domain.Campaign
-	err := s.db.WithContext(ctx).Where("tenant_id = ?", tenantID).Order("created_at desc").Find(&out).Error
-	return out, err
+	err := s.db.WithContext(ctx).
+		Where("tenant_id = ?", tenantID).
+		Order("created_at desc").
+		Offset(pg.Offset()).
+		Limit(pg.PageSize).
+		Find(&out).Error
+	if err != nil {
+		return nil, err
+	}
+	result := httpx.NewPaginatedResult(out, int(total), pg)
+	return &result, nil
 }
 
 // SendTransactional envía un mensaje individual (resumen, agradecimiento).
@@ -91,7 +126,6 @@ func (s *Service) SendTransactional(ctx context.Context, phone, templateName str
 	if !s.cfg.Enabled {
 		return nil
 	}
-	url := fmt.Sprintf("https://graph.facebook.com/%s/%s/messages", s.cfg.APIVersion, s.cfg.PhoneNumberID)
 	payload := map[string]any{
 		"messaging_product": "whatsapp",
 		"to":                phone,
@@ -104,11 +138,17 @@ func (s *Service) SendTransactional(ctx context.Context, phone, templateName str
 	if components != nil {
 		payload["template"].(map[string]any)["components"] = components
 	}
+	_, err := s.callMetaAPI(ctx, payload)
+	return err
+}
+
+func (s *Service) callMetaAPI(ctx context.Context, payload map[string]any) (map[string]any, error) {
+	url := fmt.Sprintf("https://graph.facebook.com/%s/%s/messages", s.cfg.APIVersion, s.cfg.PhoneNumberID)
 	body, _ := json.Marshal(payload)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+s.cfg.AccessToken)
 	req.Header.Set("Content-Type", "application/json")
@@ -116,14 +156,18 @@ func (s *Service) SendTransactional(ctx context.Context, phone, templateName str
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= 400 {
-		b, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("whatsapp api: %s %s", resp.Status, string(b))
+		return nil, fmt.Errorf("whatsapp api: %s %s", resp.Status, string(respBody))
 	}
-	return nil
+
+	var result map[string]any
+	_ = json.Unmarshal(respBody, &result)
+	return result, nil
 }
 
 // VerifyWebhookSignature comprueba la firma HMAC-SHA256 con APP_SECRET.
@@ -143,7 +187,7 @@ func (s *Service) VerifyWebhookSignature(signature, body []byte) bool {
 	return hmac.Equal([]byte(expected), signature[len(prefix):])
 }
 
-// ProcessWebhook actualiza estados de mensajes y maneja STOP (opt-out).
+// ProcessWebhook actualiza estados de mensajes y maneja mensajes entrantes.
 func (s *Service) ProcessWebhook(ctx context.Context, body []byte) error {
 	var payload struct {
 		Entry []struct {
@@ -154,7 +198,9 @@ func (s *Service) ProcessWebhook(ctx context.Context, body []byte) error {
 						Status string `json:"status"`
 					} `json:"statuses"`
 					Messages []struct {
+						ID   string `json:"id"`
 						From string `json:"from"`
+						Type string `json:"type"`
 						Text struct {
 							Body string `json:"body"`
 						} `json:"text"`
@@ -177,20 +223,58 @@ func (s *Service) ProcessWebhook(ctx context.Context, body []byte) error {
 				if v, ok := statusMap[st.Status]; ok {
 					_ = s.db.WithContext(ctx).Model(&domain.MessageLog{}).
 						Where("wa_message_id = ?", st.ID).Update("status", v).Error
+					_ = s.UpdateMessageStatus(ctx, st.ID, st.Status)
 				}
 			}
 			for _, m := range ch.Value.Messages {
-				if m.Text.Body == "" {
+				phone := "+" + m.From
+				body := m.Text.Body
+
+				conv, err := s.GetOrCreateConversation(ctx, s.cfg.DefaultTenantID, phone)
+				if err != nil {
+					slog.Error("webhook: conversation error", "phone", phone, "err", err)
 					continue
 				}
-				txt := m.Text.Body
-				if txt == "STOP" || txt == "stop" || txt == "BAJA" {
-					_ = s.optOutByPhone(ctx, "+"+m.From)
+
+				var bodyPtr *string
+				if body != "" {
+					bodyPtr = &body
+				}
+				_, err = s.SaveInboundMessage(ctx, conv.TenantID, conv.ID, m.ID, m.Type, bodyPtr)
+				if err != nil {
+					slog.Error("webhook: save message error", "phone", phone, "err", err)
+					continue
+				}
+
+				upperBody := strings.ToUpper(strings.TrimSpace(body))
+				if isOptOutKeyword(upperBody) {
+					_ = s.optOutByPhone(ctx, phone)
+					continue
+				}
+
+				if conv.BotEnabled {
+					s.bus.Emit("whatsapp.inbound", map[string]any{
+						"tenantId":       conv.TenantID,
+						"conversationId": conv.ID,
+						"phone":          phone,
+						"body":           body,
+						"messageId":      m.ID,
+					})
 				}
 			}
 		}
 	}
 	return nil
+}
+
+func isOptOutKeyword(upper string) bool {
+	keywords := []string{"STOP", "BAJA", "CANCELAR", "NO QUIERO", "SALIR"}
+	for _, kw := range keywords {
+		if upper == kw {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Service) optOutByPhone(ctx context.Context, phone string) error {
@@ -244,6 +328,13 @@ func (h *Handlers) RegisterPublic(r fiber.Router) {
 func (h *Handlers) RegisterPrivate(r fiber.Router) {
 	r.Get("/campaigns", h.listCampaigns)
 	r.Post("/campaigns", middleware.RequireRoles("ADMIN", "MANAGER"), h.createCampaign)
+
+	inbox := r.Group("/inbox", middleware.RequireRoles("ADMIN", "MANAGER"))
+	inbox.Get("/conversations", h.listConversations)
+	inbox.Get("/conversations/:id/messages", h.getConversationMessages)
+	inbox.Post("/conversations/:id/toggle-bot", h.toggleBot)
+	inbox.Post("/conversations/:id/close", h.closeConversation)
+	inbox.Post("/conversations/:id/send", h.sendManualMessage)
 }
 
 // GET /webhook: verificación de suscripción (lo hace Meta una sola vez).
@@ -269,7 +360,8 @@ func (h *Handlers) receiveWebhook(c *fiber.Ctx) error {
 
 func (h *Handlers) listCampaigns(c *fiber.Ctx) error {
 	u := middleware.CurrentUser(c)
-	out, err := h.svc.ListCampaigns(c.Context(), u.TenantID)
+	pg := httpx.ParsePagination(c)
+	out, err := h.svc.ListCampaigns(c.Context(), u.TenantID, pg)
 	if err != nil {
 		return httpx.FromError(c, err)
 	}
@@ -287,4 +379,59 @@ func (h *Handlers) createCampaign(c *fiber.Ctx) error {
 		return httpx.FromError(c, err)
 	}
 	return c.Status(fiber.StatusCreated).JSON(out)
+}
+
+func (h *Handlers) listConversations(c *fiber.Ctx) error {
+	u := middleware.CurrentUser(c)
+	pg := httpx.ParsePagination(c)
+	out, err := h.svc.ListConversations(c.Context(), u.TenantID, pg)
+	if err != nil {
+		return httpx.FromError(c, err)
+	}
+	return c.JSON(out)
+}
+
+func (h *Handlers) getConversationMessages(c *fiber.Ctx) error {
+	msgs, err := h.svc.GetConversationMessages(c.Context(), c.Params("id"))
+	if err != nil {
+		return httpx.FromError(c, err)
+	}
+	return c.JSON(msgs)
+}
+
+func (h *Handlers) toggleBot(c *fiber.Ctx) error {
+	var dto struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := c.BodyParser(&dto); err != nil {
+		return httpx.BadRequest(c, "JSON inválido")
+	}
+	if err := h.svc.ToggleBot(c.Context(), c.Params("id"), dto.Enabled); err != nil {
+		return httpx.FromError(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}
+
+func (h *Handlers) closeConversation(c *fiber.Ctx) error {
+	if err := h.svc.CloseConversation(c.Context(), c.Params("id")); err != nil {
+		return httpx.FromError(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}
+
+func (h *Handlers) sendManualMessage(c *fiber.Ctx) error {
+	u := middleware.CurrentUser(c)
+	var dto struct {
+		Phone string `json:"phone" validate:"required"`
+		Body  string `json:"body" validate:"required"`
+	}
+	if err := httpx.BindAndValidate(c, &dto); err != nil {
+		return err
+	}
+	body := dto.Body
+	_, err := h.svc.EnqueueOutbox(c.Context(), u.TenantID, dto.Phone, "text", "", &body, domain.JSONB{})
+	if err != nil {
+		return httpx.FromError(c, err)
+	}
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"ok": true, "status": "QUEUED"})
 }

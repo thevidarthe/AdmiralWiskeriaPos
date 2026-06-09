@@ -15,9 +15,7 @@ const config = {
   },
   experimental: { optimizePackageImports: ['lucide-react'] },
   typescript: {
-    // Permite que el build continúe aunque haya errores de tipos;
-    // temporal para evitar el fallo causado por '--ignoreDeprecations'.
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 };
 

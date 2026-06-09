@@ -92,10 +92,10 @@ async function main() {
   // En producción cambia las contraseñas y PINs vía panel admin
   const seedUsers = [
     { email: 'admin@admiral.co', name: 'Administrador', role: UserRole.ADMIN, pin: '1234', password: 'Admiral2026!' },
-    { email: 'andres@admiral.co', name: 'Andrés Ramírez', role: UserRole.BARISTA, pin: '1111', password: 'Barista2026!' },
-    { email: 'juliana@admiral.co', name: 'Juliana Pérez', role: UserRole.WAITER, pin: '2222', password: 'Mesero2026!' },
-    { email: 'camila@admiral.co', name: 'Camila Gómez', role: UserRole.WAITER, pin: '2233', password: 'Mesero2026!' },
-    { email: 'ricardo@admiral.co', name: 'Ricardo López', role: UserRole.CASHIER, pin: '3333', password: 'Cajero2026!' },
+    { email: 'barista@admiral.co', name: 'Barista', role: UserRole.BARISTA, pin: '1111', password: 'Barista2026!' },
+    { email: 'mesero@admiral.co', name: 'Mesero', role: UserRole.WAITER, pin: '2222', password: 'Mesero2026!' },
+    { email: 'mesero2@admiral.co', name: 'Mesero 2', role: UserRole.WAITER, pin: '2233', password: 'Mesero2026!' },
+    { email: 'cajero@admiral.co', name: 'Cajero', role: UserRole.CASHIER, pin: '3333', password: 'Cajero2026!' },
   ];
 
   for (const u of seedUsers) {
@@ -270,9 +270,9 @@ async function main() {
 
   console.log('✅ Seed completo');
   console.log('   Admin:   admin@admiral.co       / pwd Admiral2026!   / PIN 1234');
-  console.log('   Barista: andres@admiral.co      / pwd Barista2026!   / PIN 1111');
-  console.log('   Mesero:  juliana@admiral.co     / pwd Mesero2026!    / PIN 2222');
-  console.log('   Cajero:  ricardo@admiral.co     / pwd Cajero2026!    / PIN 3333');
+  console.log('   Barista: barista@admiral.co     / pwd Barista2026!   / PIN 1111');
+  console.log('   Mesero:  mesero@admiral.co      / pwd Mesero2026!    / PIN 2222');
+  console.log('   Cajero:  cajero@admiral.co      / pwd Cajero2026!    / PIN 3333');
   console.log('   ⚠ Cambia estas credenciales en producción desde el panel admin.');
 }
 

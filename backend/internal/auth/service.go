@@ -288,18 +288,18 @@ func (s *Service) ClockInOut(
 	// 2. Geofencing y Auditoría de Coordenadas GPS
 	metadata := domain.JSONB{}
 	if lat != nil && lon != nil {
-		// Sandoná Coordenadas por defecto (Sucursal Principal)
-		branchLat := 1.2878
-		branchLon := -77.4772
-		geofenceRadius := 100.0 // 100 metros por defecto
+		branchLat := 0.0
+		branchLon := 0.0
+		geofenceRadius := 100.0
+		hasCoords := false
 
-		// Intentar buscar coordenadas reales de la sucursal
 		var branch struct {
 			Settings domain.JSONB
 		}
 		if err := s.db.WithContext(ctx).Table("branches").Select("settings").Where("id = ?", branchID).First(&branch).Error; err == nil {
 			if sLat, ok := branch.Settings["latitude"].(float64); ok {
 				branchLat = sLat
+				hasCoords = true
 			}
 			if sLon, ok := branch.Settings["longitude"].(float64); ok {
 				branchLon = sLon
@@ -309,13 +309,17 @@ func (s *Service) ClockInOut(
 			}
 		}
 
-		// Calcular distancia mediante Haversine
-		dist := haversine(*lat, *lon, branchLat, branchLon)
-		inside := dist <= geofenceRadius
+		if hasCoords {
+			dist := haversine(*lat, *lon, branchLat, branchLon)
+			inside := dist <= geofenceRadius
 
-		metadata["distance_meters"] = dist
-		metadata["inside_geofence"] = inside
-		metadata["geofence_radius_meters"] = geofenceRadius
+			metadata["distance_meters"] = dist
+			metadata["inside_geofence"] = inside
+			metadata["geofence_radius_meters"] = geofenceRadius
+		} else {
+			metadata["geofence_skipped"] = true
+			metadata["geofence_reason"] = "branch has no coordinates configured"
+		}
 	}
 
 	attendance := &domain.StaffAttendance{

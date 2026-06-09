@@ -98,6 +98,7 @@ func main() {
 		WebhookVerifyToken: cfg.WhatsAppWebhookVerifyToken,
 		AppSecret:          cfg.WhatsAppAppSecret,
 		APIVersion:         cfg.WhatsAppAPIVersion,
+		DefaultTenantID:    "",
 	})
 
 	// Admin sub-services
@@ -217,18 +218,13 @@ func main() {
 	})))
 
 	brandH := brand.NewHandlers(authSvc, menuSvc, qrSvc)
-	brandH.RegisterPublic(v1.Group("/mi", limiter.New(limiter.Config{
-		Max:        cfg.RateLimitAuthMax,
-		Expiration: time.Duration(cfg.RateLimitWindowSec) * time.Second,
-	})))
 
 	qrH := qr.NewHandlers(qrSvc, menuSvc, posSvc)
 	qrH.RegisterPublic(v1.Group("/qr"))
 
 	whatsapp.NewHandlers(waSvc).RegisterPublic(v1.Group("/whatsapp"))
 
-	posH := pos.NewHandlers(posSvc)
-	posH.RegisterPublic(v1.Group("/pos"))
+	posH := pos.NewHandlers(posSvc, cfg)
 
 	// Privadas (requieren JWT)
 	private := v1.Group("/", middleware.JWTAuth(jwtSvc))
@@ -247,6 +243,10 @@ func main() {
 	adminMod.Register(private.Group("/admin"))
 
 	// 8. Arrancar servidor + graceful shutdown
+	workerCtx, workerCancel := context.WithCancel(context.Background())
+	defer workerCancel()
+	go waSvc.RunWorker(workerCtx, 5*time.Second)
+
 	go func() {
 		addr := ":" + strconv.Itoa(cfg.AppPort)
 		slog.Info("🚀 escuchando", "addr", addr, "frontend", cfg.FrontendURL)

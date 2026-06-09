@@ -54,9 +54,13 @@ type Config struct {
 	RateLimitWindowSec int `env:"RATE_LIMIT_WINDOW_SEC" envDefault:"60"`
 	RateLimitAuthMax   int `env:"RATE_LIMIT_AUTH_MAX" envDefault:"10"`
 
-	// Tenant default (seed)
+	// Simulate Weather (dev/staging only)
+	SimulateWeatherEnabled bool `env:"SIMULATE_WEATHER_ENABLED" envDefault:"false"`
+
+	// Tenant/Branch defaults
 	DefaultTenantSlug string `env:"DEFAULT_TENANT_SLUG" envDefault:"admiral"`
 	DefaultTenantName string `env:"DEFAULT_TENANT_NAME" envDefault:"Admiral Whiskería"`
+	DefaultBranchSlug string `env:"DEFAULT_BRANCH_SLUG" envDefault:"sandoná"`
 
 	// WhatsApp
 	WhatsAppEnabled            bool   `env:"WHATSAPP_ENABLED" envDefault:"false"`

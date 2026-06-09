@@ -27,6 +27,7 @@ export default function QrCustomerPage() {
   const [optInChecked, setOptInChecked] = useState(false);
   const [calling, setCalling] = useState(false);
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Cuenta Dividida
   const [split, setSplit] = useState<any>(null);
@@ -425,13 +426,28 @@ export default function QrCustomerPage() {
                 <span className="font-serif text-lg gold-text font-bold">{formatCOP(total)}</span>
               </div>
               <button
-                onClick={() => {
-                  setSent(true);
-                  toast.success('Pedido enviado al mesero');
+                disabled={submitting}
+                onClick={async () => {
+                  if (!token || submitting) return;
+                  setSubmitting(true);
+                  try {
+                    const lines = cartLines.map((l) => ({
+                      productId: l.id,
+                      quantity: l.qty,
+                    }));
+                    await qrApi.submitOrder(token, lines);
+                    setSent(true);
+                    setCart({});
+                    toast.success('Pedido enviado al mesero');
+                  } catch (e) {
+                    toast.error(apiError(e));
+                  } finally {
+                    setSubmitting(false);
+                  }
                 }}
                 className="btn-gold w-full !py-3"
               >
-                Enviar pedido al mesero
+                {submitting ? 'Enviando…' : 'Enviar pedido al mesero'}
               </button>
             </div>
           </motion.div>
