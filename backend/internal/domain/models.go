@@ -204,18 +204,6 @@ type Customer struct {
 	CreatedAt     time.Time       `json:"createdAt"`
 	UpdatedAt     time.Time       `json:"updatedAt"`
 
-	Consents []WhatsAppConsent `gorm:"foreignKey:CustomerID" json:"consents,omitempty"`
-}
-
-type WhatsAppConsent struct {
-	ID           string     `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	CustomerID   string     `gorm:"type:uuid;not null;index" json:"customerId"`
-	Type         string     `gorm:"not null" json:"type"`
-	Channel      string     `gorm:"not null" json:"channel"`
-	Active       bool       `gorm:"default:true" json:"active"`
-	TermsVersion string     `gorm:"default:'v1'" json:"termsVersion"`
-	ConsentedAt  time.Time  `gorm:"default:now()" json:"consentedAt"`
-	RevokedAt    *time.Time `json:"revokedAt,omitempty"`
 }
 
 type LoyaltyTransaction struct {
@@ -413,90 +401,6 @@ type BrandConfig struct {
 	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
-type WhatsAppMessageTemplate struct {
-	ID        string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	TenantID  string    `gorm:"type:uuid;not null;index" json:"tenantId"`
-	BranchID  *string   `gorm:"type:uuid;index" json:"branchId,omitempty"`
-	Name      string    `gorm:"not null" json:"name"`
-	Slug      string    `gorm:"not null;uniqueIndex:idx_wa_template_tenant_slug" json:"slug"`
-	Category  string    `gorm:"not null;default:'MARKETING'" json:"category"`
-	Language  string    `gorm:"default:'es'" json:"language"`
-	Content   string    `gorm:"type:text;not null" json:"content"`
-	Variables JSONB     `gorm:"type:jsonb;default:'[]'::jsonb" json:"variables"`
-	MetaID    string    `json:"metaId,omitempty"`
-	Status    string    `gorm:"default:'DRAFT'" json:"status"`
-	Active    bool      `gorm:"default:true" json:"active"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-type WhatsAppPromotionCampaign struct {
-	ID              string           `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	TenantID        string           `gorm:"type:uuid;not null;index" json:"tenantId"`
-	BranchID        *string          `gorm:"type:uuid;index" json:"branchId,omitempty"`
-	PromotionID     string           `gorm:"type:uuid;not null;index" json:"promotionId"`
-	Name            string           `gorm:"not null" json:"name"`
-	TemplateID      string           `gorm:"type:uuid;not null" json:"templateId"`
-	SegmentQuery    JSONB            `gorm:"type:jsonb" json:"segmentQuery"`
-	Status          CampaignStatus   `gorm:"type:varchar(20);default:'DRAFT'" json:"status"`
-	ScheduledAt     *time.Time       `json:"scheduledAt,omitempty"`
-	SentAt          *time.Time       `json:"sentAt,omitempty"`
-	TotalRecipients int              `gorm:"default:0" json:"totalRecipients"`
-	TotalSent       int              `gorm:"default:0" json:"totalSent"`
-	TotalDelivered  int              `gorm:"default:0" json:"totalDelivered"`
-	TotalRead       int              `gorm:"default:0" json:"totalRead"`
-	TotalFailed     int              `gorm:"default:0" json:"totalFailed"`
-	TotalClicks     int              `gorm:"default:0" json:"totalClicks"`
-	CreatedAt       time.Time        `json:"createdAt"`
-	UpdatedAt       time.Time        `json:"updatedAt"`
-}
-
-// ════════════════════════════════════════════════════════════
-// WhatsApp
-// ════════════════════════════════════════════════════════════
-
-type MessageTemplate struct {
-	ID         string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	TenantID   string    `gorm:"type:uuid;not null;index" json:"tenantId"`
-	Name       string    `gorm:"not null" json:"name"`
-	WaID       string    `gorm:"not null" json:"waId"`
-	Category   string    `gorm:"not null" json:"category"`
-	Language   string    `gorm:"default:'es'" json:"language"`
-	Components JSONB     `gorm:"type:jsonb" json:"components"`
-	Active     bool      `gorm:"default:true" json:"active"`
-	CreatedAt  time.Time `json:"createdAt"`
-}
-
-type Campaign struct {
-	ID             string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	TenantID       string         `gorm:"type:uuid;not null;index" json:"tenantId"`
-	BranchID       *string        `gorm:"type:uuid" json:"branchId,omitempty"`
-	Name           string         `gorm:"not null" json:"name"`
-	TemplateID     *string        `gorm:"type:uuid" json:"templateId,omitempty"`
-	SegmentQuery   JSONB          `gorm:"type:jsonb;not null" json:"segmentQuery"`
-	Status         CampaignStatus `gorm:"type:varchar(20);default:'DRAFT'" json:"status"`
-	ScheduledAt    *time.Time     `json:"scheduledAt,omitempty"`
-	SentAt         *time.Time     `json:"sentAt,omitempty"`
-	TotalSent      int            `gorm:"default:0" json:"totalSent"`
-	TotalDelivered int            `gorm:"default:0" json:"totalDelivered"`
-	TotalRead      int            `gorm:"default:0" json:"totalRead"`
-	TotalFailed    int            `gorm:"default:0" json:"totalFailed"`
-	CreatedAt      time.Time      `json:"createdAt"`
-}
-
-type MessageLog struct {
-	ID          string        `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
-	CampaignID  *string       `gorm:"type:uuid;index" json:"campaignId,omitempty"`
-	CustomerID  string        `gorm:"type:uuid;not null;index" json:"customerId"`
-	WaMessageID string        `json:"waMessageId,omitempty"`
-	Phone       string        `gorm:"not null" json:"phone"`
-	Status      MessageStatus `gorm:"type:varchar(20);default:'QUEUED'" json:"status"`
-	SentAt      *time.Time    `json:"sentAt,omitempty"`
-	DeliveredAt *time.Time    `json:"deliveredAt,omitempty"`
-	ReadAt      *time.Time    `json:"readAt,omitempty"`
-	FailReason  string        `json:"failReason,omitempty"`
-	CreatedAt   time.Time     `json:"createdAt"`
-}
 
 // ════════════════════════════════════════════════════════════
 // Auditoría

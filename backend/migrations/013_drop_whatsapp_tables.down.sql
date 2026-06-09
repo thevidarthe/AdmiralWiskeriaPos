@@ -1,0 +1,1 @@
+-- No-op: las tablas eliminadas no pueden restaurarse automáticamente

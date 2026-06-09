@@ -61,15 +61,6 @@ type Config struct {
 	DefaultTenantSlug string `env:"DEFAULT_TENANT_SLUG" envDefault:"admiral"`
 	DefaultTenantName string `env:"DEFAULT_TENANT_NAME" envDefault:"Admiral Whiskería"`
 	DefaultBranchSlug string `env:"DEFAULT_BRANCH_SLUG" envDefault:"sandoná"`
-
-	// WhatsApp
-	WhatsAppEnabled            bool   `env:"WHATSAPP_ENABLED" envDefault:"false"`
-	WhatsAppPhoneNumberID      string `env:"WHATSAPP_PHONE_NUMBER_ID"`
-	WhatsAppAccessToken        string `env:"WHATSAPP_ACCESS_TOKEN"`
-	WhatsAppWebhookVerifyToken string `env:"WHATSAPP_WEBHOOK_VERIFY_TOKEN"`
-	WhatsAppAppSecret          string `env:"WHATSAPP_APP_SECRET"`
-	WhatsAppAPIVersion         string `env:"WHATSAPP_API_VERSION" envDefault:"v19.0"`
-
 	// Logging
 	LogLevel  string `env:"LOG_LEVEL" envDefault:"info"`
 	LogFormat string `env:"LOG_FORMAT" envDefault:"json"`

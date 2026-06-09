@@ -1,5 +1,4 @@
-// Package crm — clientes y lealtad.
-package crm
+﻿package crm
 
 import (
 	"context"
@@ -17,7 +16,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// Umbrales de fidelidad en pesos colombianos gastados (acumulado).
 var loyaltyThresholds = map[domain.LoyaltyLevel]decimal.Decimal{
 	domain.LoyaltyPlatinum: decimal.NewFromInt(5_000_000),
 	domain.LoyaltyGold:     decimal.NewFromInt(2_000_000),
@@ -31,12 +29,9 @@ type Service struct {
 
 func NewService(db *gorm.DB, bus *event.Bus) *Service {
 	s := &Service{db: db, bus: bus}
-	// Subscribirse a "sale.closed" para acreditar puntos automáticamente.
 	bus.On("sale.closed", s.onSaleClosed)
 	return s
 }
-
-// ─── DTOs ─────────────────────────────────────────────────────
 
 type UpsertCustomerInput struct {
 	Phone    string     `json:"phone" validate:"required,min=7"`
@@ -52,25 +47,16 @@ type PublicRegisterInput struct {
 	Email      string `json:"email,omitempty" validate:"omitempty,email"`
 }
 
-type ConsentInput struct {
-	Type    string `json:"type" validate:"required,oneof=transactional marketing"`
-	Channel string `json:"channel" validate:"required"`
-	Active  bool   `json:"active"`
-}
-
 type SegmentInput struct {
 	LoyaltyLevels       []domain.LoyaltyLevel `json:"loyaltyLevels,omitempty"`
 	MinVisits           int                   `json:"minVisits,omitempty"`
 	MinTotalSpent       float64               `json:"minTotalSpent,omitempty"`
-	HasMarketingConsent bool                  `json:"hasMarketingConsent,omitempty"`
 }
-
-// ─── Lógica ───────────────────────────────────────────────────
 
 func (s *Service) UpsertCustomer(ctx context.Context, tenantID string, in UpsertCustomerInput) (*domain.Customer, error) {
 	phone := normalizePhone(in.Phone)
 	if phone == "" {
-		return nil, errors.New("teléfono inválido")
+		return nil, errors.New("tel\xc3\xa9fono inv\xc3\xa1lido")
 	}
 
 	var c domain.Customer
@@ -89,11 +75,6 @@ func (s *Service) UpsertCustomer(ctx context.Context, tenantID string, in Upsert
 		if err := s.db.WithContext(ctx).Create(&c).Error; err != nil {
 			return nil, err
 		}
-		// Emitir evento para lógica secundaria (como bienvenida por WhatsApp o integraciones)
-		s.bus.Emit("customer.registered", map[string]any{
-			"tenantId": tenantID,
-			"customer": &c,
-		})
 	} else {
 		updates := map[string]any{}
 		if in.Name != "" {
@@ -114,7 +95,7 @@ func (s *Service) UpsertCustomer(ctx context.Context, tenantID string, in Upsert
 	return &c, nil
 }
 
-func (s *Service) GetCustomer(ctx context.Context, tenantID, id string) (*domain.Customer, error) {
+func (s *Service) GetCustomer(ctx context.Context, tenantID string, id string) (*domain.Customer, error) {
 	var c domain.Customer
 	err := s.db.WithContext(ctx).
 		Preload("Consents", "active = true").
@@ -178,28 +159,6 @@ func (s *Service) ListCustomers(ctx context.Context, tenantID string, opts ListO
 	return &PaginatedCustomers{Items: items, Total: total, Page: opts.Page, PerPage: opts.PerPage, Pages: pages}, nil
 }
 
-func (s *Service) RegisterConsent(ctx context.Context, customerID string, in ConsentInput) error {
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		now := time.Now()
-		if err := tx.Model(&domain.WhatsAppConsent{}).
-			Where("customer_id = ? AND type = ? AND active = true", customerID, in.Type).
-			Updates(map[string]any{"active": false, "revoked_at": &now}).Error; err != nil {
-			return err
-		}
-		if in.Active {
-			c := domain.WhatsAppConsent{
-				CustomerID:   customerID,
-				Type:         in.Type,
-				Channel:      in.Channel,
-				Active:       true,
-				TermsVersion: "v1",
-			}
-			return tx.Create(&c).Error
-		}
-		return nil
-	})
-}
-
 func (s *Service) SegmentMembers(ctx context.Context, tenantID string, in SegmentInput) ([]domain.Customer, error) {
 	q := s.db.WithContext(ctx).Where("tenant_id = ?", tenantID)
 	if len(in.LoyaltyLevels) > 0 {
@@ -211,17 +170,10 @@ func (s *Service) SegmentMembers(ctx context.Context, tenantID string, in Segmen
 	if in.MinTotalSpent > 0 {
 		q = q.Where("total_spent >= ?", in.MinTotalSpent)
 	}
-	if in.HasMarketingConsent {
-		q = q.Joins("JOIN whatsapp_consents wc ON wc.customer_id = customers.id").
-			Where("wc.type = 'marketing' AND wc.active = true").
-			Distinct()
-	}
 	var out []domain.Customer
 	err := q.Find(&out).Error
 	return out, err
 }
-
-// ─── Listener: cuando se cierra una venta, acreditar puntos ───
 
 func (s *Service) onSaleClosed(payload any) {
 	data, ok := payload.(map[string]any)
@@ -233,7 +185,7 @@ func (s *Service) onSaleClosed(payload any) {
 		return
 	}
 	amount, _ := data["amount"].(float64)
-	points := int(amount * 0.01) // 1 punto por cada $100
+	points := int(amount * 0.01)
 	if points <= 0 {
 		return
 	}
@@ -307,8 +259,6 @@ func defaultStr(v, fallback string) string {
 	return v
 }
 
-// ─── HTTP ─────────────────────────────────────────────────────
-
 type Handlers struct{ svc *Service }
 
 func NewHandlers(svc *Service) *Handlers { return &Handlers{svc: svc} }
@@ -317,7 +267,6 @@ func (h *Handlers) Register(r fiber.Router) {
 	r.Get("/customers", h.list)
 	r.Get("/customers/:id", h.get)
 	r.Post("/customers", h.upsert)
-	r.Put("/customers/:id/consent", h.consent)
 	r.Post("/segments/preview", h.segment)
 }
 
@@ -361,17 +310,6 @@ func (h *Handlers) upsert(c *fiber.Ctx) error {
 	return c.JSON(out)
 }
 
-func (h *Handlers) consent(c *fiber.Ctx) error {
-	var dto ConsentInput
-	if err := httpx.BindAndValidate(c, &dto); err != nil {
-		return err
-	}
-	if err := h.svc.RegisterConsent(c.Context(), c.Params("id"), dto); err != nil {
-		return httpx.FromError(c, err)
-	}
-	return c.JSON(fiber.Map{"ok": true})
-}
-
 func (h *Handlers) segment(c *fiber.Ctx) error {
 	u := middleware.CurrentUser(c)
 	var dto SegmentInput
@@ -394,7 +332,7 @@ func (h *Handlers) RegisterPublicCustomer(c *fiber.Ctx) error {
 	var t domain.Tenant
 	if err := h.svc.db.WithContext(c.Context()).First(&t, "slug = ? AND active = true", dto.TenantSlug).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return httpx.BadRequest(c, "Tenant inválido o inactivo")
+			return httpx.BadRequest(c, "Tenant inv\xc3\xa1lido o inactivo")
 		}
 		return httpx.FromError(c, err)
 	}
@@ -407,18 +345,5 @@ func (h *Handlers) RegisterPublicCustomer(c *fiber.Ctx) error {
 	if err != nil {
 		return httpx.FromError(c, err)
 	}
-
-	// Registrar consentimiento automático para marketing y transaccional para clientes públicos registrados
-	_ = h.svc.RegisterConsent(c.Context(), out.ID, ConsentInput{
-		Type:    "transactional",
-		Channel: "whatsapp",
-		Active:  true,
-	})
-	_ = h.svc.RegisterConsent(c.Context(), out.ID, ConsentInput{
-		Type:    "marketing",
-		Channel: "whatsapp",
-		Active:  true,
-	})
-
 	return c.JSON(out)
 }

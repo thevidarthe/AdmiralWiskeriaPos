@@ -18,7 +18,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-    "strings"
+	"strings"
 	"strconv"
 	"syscall"
 	"time"
@@ -43,7 +43,6 @@ import (
 	"github.com/admiral/admiral-pro/internal/promotion"
 	"github.com/admiral/admiral-pro/internal/qr"
 	"github.com/admiral/admiral-pro/internal/report"
-	"github.com/admiral/admiral-pro/internal/whatsapp"
 	"github.com/admiral/admiral-pro/pkg/logger"
 )
 
@@ -91,15 +90,6 @@ func main() {
 	crmSvc := crm.NewService(gormDB, bus)
 	qrSvc := qr.NewService(gormDB, menuSvc, bus)
 	reportSvc := report.NewService(gormDB)
-	waSvc := whatsapp.NewService(gormDB, bus, whatsapp.Config{
-		Enabled:            cfg.WhatsAppEnabled,
-		PhoneNumberID:      cfg.WhatsAppPhoneNumberID,
-		AccessToken:        cfg.WhatsAppAccessToken,
-		WebhookVerifyToken: cfg.WhatsAppWebhookVerifyToken,
-		AppSecret:          cfg.WhatsAppAppSecret,
-		APIVersion:         cfg.WhatsAppAPIVersion,
-		DefaultTenantID:    "",
-	})
 
 	// Admin sub-services
 	adminMod := &admin.Module{
@@ -222,8 +212,6 @@ func main() {
 	qrH := qr.NewHandlers(qrSvc, menuSvc, posSvc)
 	qrH.RegisterPublic(v1.Group("/qr"))
 
-	whatsapp.NewHandlers(waSvc).RegisterPublic(v1.Group("/whatsapp"))
-
 	posH := pos.NewHandlers(posSvc, cfg)
 
 	crmH := crm.NewHandlers(crmSvc)
@@ -239,14 +227,34 @@ func main() {
 	posH.Register(private.Group("/pos"))
 	crmH.Register(private.Group("/crm"))
 	qrH.RegisterPrivate(private.Group("/qr"))
-	whatsapp.NewHandlers(waSvc).RegisterPrivate(private.Group("/whatsapp"))
 	report.NewHandlers(reportSvc).Register(private.Group("/reports"))
 	adminMod.Register(private.Group("/admin"))
 
+	// ── Servir frontend estatico (Next.js export + SPA) ──
+	frontendDir := "./frontend"
+	if info, err := os.Stat(frontendDir); err == nil && info.IsDir() {
+		app.Use(func(c *fiber.Ctx) error {
+			// Las rutas /api/ pasan al siguiente handler
+			if strings.HasPrefix(c.Path(), "/api/") || strings.HasPrefix(c.Path(), "/uploads/") {
+				return c.Next()
+			}
+			path := c.Path()
+			if path == "/" {
+				path = "/index.html"
+			}
+			filePath := frontendDir + path
+			if _, err := os.Stat(filePath); err == nil {
+				c.SendFile(filePath)
+				return nil
+			}
+			// SPA fallback: servir index.html para rutas tipo /pos, /login, etc.
+			c.Set("Content-Type", "text/html; charset=utf-8")
+			return c.SendFile(frontendDir + "/index.html")
+		})
+		slog.Info("📦 sirviendo frontend estatico", "dir", frontendDir)
+	}
+
 	// 8. Arrancar servidor + graceful shutdown
-	workerCtx, workerCancel := context.WithCancel(context.Background())
-	defer workerCancel()
-	go waSvc.RunWorker(workerCtx, 5*time.Second)
 
 	go func() {
 		addr := ":" + strconv.Itoa(cfg.AppPort)

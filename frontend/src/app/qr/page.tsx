@@ -23,8 +23,6 @@ export default function QrCustomerPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [cart, setCart] = useState<Record<string, number>>({});
   const [activeCat, setActiveCat] = useState<string>('all');
-  const [optInPhone, setOptInPhone] = useState('');
-  const [optInChecked, setOptInChecked] = useState(false);
   const [calling, setCalling] = useState(false);
   const [sent, setSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -381,31 +379,6 @@ export default function QrCustomerPage() {
             </motion.div>
           );
         })}
-      </div>
-
-      {/* Opt-in WhatsApp */}
-      <div className="mx-3 mt-6 p-4 rounded-xl border border-admiral-gold/15 bg-admiral-navy-2/40">
-        <div className="flex items-center gap-2 mb-2 text-admiral-gold">
-          <MessageCircle size={14} />
-          <span className="text-sm font-medium">Recibe promos por WhatsApp</span>
-        </div>
-        <label className="flex items-center gap-2 text-xs text-admiral-parch cursor-pointer">
-          <input
-            type="checkbox"
-            checked={optInChecked}
-            onChange={(e) => setOptInChecked(e.target.checked)}
-            className="w-4 h-4 accent-admiral-gold"
-          />
-          Acepto los términos y la política de privacidad
-        </label>
-        {optInChecked && (
-          <input
-            value={optInPhone}
-            onChange={(e) => setOptInPhone(e.target.value)}
-            placeholder="+57 300 000 0000"
-            className="input-field mt-2 !py-2 text-sm"
-          />
-        )}
       </div>
 
       {/* Carrito flotante */}

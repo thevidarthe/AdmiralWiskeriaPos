@@ -1,12 +1,10 @@
 package pos
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"net/http"
 	"time"
 
 	"github.com/admiral/admiral-pro/internal/domain"
@@ -68,47 +66,7 @@ func (s *Service) EvaluateRules(ctx context.Context, tenantID, triggerType strin
 
 func (s *Service) executeRuleAction(ctx context.Context, tenantID string, action domain.RuleAction, eventData map[string]any) error {
 	switch action.Type {
-	case "whatsapp.webhook":
-		// Payload contiene webhook de n8n o endpoint externo
-		var payload struct {
-			WebhookURL string `json:"webhookUrl"`
-			Message    string `json:"message"`
-		}
-		
-		dataBytes, _ := json.Marshal(action.Payload)
-		if err := json.Unmarshal(dataBytes, &payload); err != nil {
-			return err
-		}
 
-		if payload.WebhookURL == "" {
-			// Webhook de n8n por defecto (nombre de host docker 'n8n' en puerto 5678)
-			payload.WebhookURL = "http://n8n:5678/webhook/weather-promo"
-		}
-
-		// Combinar datos del evento y payload
-		bodyData := map[string]any{
-			"tenantId":  tenantID,
-			"event":     eventData,
-			"message":   payload.Message,
-			"timestamp": time.Now().Format(time.RFC3339),
-		}
-		
-		bodyBytes, _ := json.Marshal(bodyData)
-		req, err := http.NewRequestWithContext(ctx, "POST", payload.WebhookURL, bytes.NewBuffer(bodyBytes))
-		if err != nil {
-			return err
-		}
-		req.Header.Set("Content-Type", "application/json")
-		
-		client := &http.Client{Timeout: 5 * time.Second}
-		resp, err := client.Do(req)
-		if err != nil {
-			return fmt.Errorf("error llamando webhook n8n: %w", err)
-		}
-		defer resp.Body.Close()
-		
-		slog.Info("Webhook de n8n disparado con éxito", "status", resp.Status)
-		return nil
 
 	case "pos.apply_promo":
 		// Modifica las tarifas de licores en caliente en la base de datos!

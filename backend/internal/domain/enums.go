@@ -125,25 +125,4 @@ const (
 	PromoPercentDiscount PromoType = "PERCENTAGE_DISCOUNT"
 )
 
-// CampaignStatus — estado de una campaña de WhatsApp.
-type CampaignStatus string
 
-const (
-	CampaignDraft     CampaignStatus = "DRAFT"
-	CampaignScheduled CampaignStatus = "SCHEDULED"
-	CampaignSending   CampaignStatus = "SENDING"
-	CampaignSent      CampaignStatus = "SENT"
-	CampaignCancelled CampaignStatus = "CANCELLED"
-)
-
-// MessageStatus — estado de un mensaje individual de WhatsApp.
-type MessageStatus string
-
-const (
-	MsgQueued    MessageStatus = "QUEUED"
-	MsgSent      MessageStatus = "SENT"
-	MsgDelivered MessageStatus = "DELIVERED"
-	MsgRead      MessageStatus = "READ"
-	MsgFailed    MessageStatus = "FAILED"
-	MsgOptOut    MessageStatus = "OPT_OUT"
-)

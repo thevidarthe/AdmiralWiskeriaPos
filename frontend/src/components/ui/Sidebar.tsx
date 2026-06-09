@@ -14,7 +14,6 @@ import {
   Settings,
   LogOut,
   QrCode,
-  MessageCircle,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { Logo } from './Logo';
@@ -30,7 +29,6 @@ const NAV = [
   { href: '/admin/clientes',       label: 'Clientes',      icon: UserCircle2 },
   { href: '/admin/usuarios',       label: 'Usuarios',      icon: Users },
   { href: '/admin/qr',             label: 'QR Mesas',      icon: QrCode },
-  { href: '/admin/whatsapp',       label: 'WhatsApp',      icon: MessageCircle },
   { href: '/admin/configuracion',  label: 'Configuración', icon: Settings },
 ];
 

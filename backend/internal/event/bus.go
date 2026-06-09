@@ -1,7 +1,7 @@
 // Package event implementa un event bus en memoria para eventos del dominio.
 //
-// 📚 Patrón: en lugar de que el servicio POS llame directamente a CRM y
-// WhatsApp cuando se cierra una venta, emite un evento "sale.closed" y
+// 📚 Patrón: en lugar de que el servicio POS llame directamente a CRM
+// cuando se cierra una venta, emite un evento "sale.closed" y
 // cada módulo que le interese se suscribe. Esto desacopla los módulos.
 //
 // Implementación pequeña pero suficiente para un POS de un solo nodo.
@@ -36,7 +36,7 @@ func (b *Bus) On(event string, h Handler) {
 }
 
 // Emit dispara el evento. Los handlers se ejecutan en goroutines separadas
-// para que el caller no se bloquee si un handler tarda (ej: envío WhatsApp).
+// para que el caller no se bloquee si un handler tarda.
 func (b *Bus) Emit(event string, payload any) {
 	b.mu.RLock()
 	hs := b.handlers[event]
