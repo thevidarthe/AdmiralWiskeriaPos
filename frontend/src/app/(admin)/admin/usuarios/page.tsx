@@ -29,7 +29,7 @@ export default function UsuariosPage() {
   const load = () =>
     adminApi.users
       .list()
-      .then((r) => setUsers(r.data))
+      .then((r) => setUsers(r.data.data || []))
       .catch((e) => toast.error(apiError(e)))
       .finally(() => setLoading(false));
 
