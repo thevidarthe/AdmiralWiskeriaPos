@@ -48,6 +48,7 @@ func NewService(db *gorm.DB, bus *event.Bus, cfg Config) *Service {
 	s := &Service{db: db, bus: bus, cfg: cfg}
 	bus.On("sale.closed", s.onSaleClosed)
 	bus.On("whatsapp.inbound", s.onInboundMessage)
+	bus.On("customer.registered", s.onCustomerRegistered)
 	return s
 }
 
@@ -66,6 +67,29 @@ func (s *Service) onInboundMessage(payload any) {
 
 	if err := s.HandleInboundMessage(ctx, tenantID, conversationID, phone, body); err != nil {
 		slog.Error("bot: inbound error", "phone", phone, "err", err)
+	}
+}
+
+func (s *Service) onCustomerRegistered(payload any) {
+	data, ok := payload.(map[string]any)
+	if !ok {
+		return
+	}
+	tenantID, _ := data["tenantId"].(string)
+	cust, _ := data["customer"].(*domain.Customer)
+	if cust == nil {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Encolar mensaje de bienvenida con el cupón de lealtad en la outbox de WhatsApp
+	body := fmt.Sprintf("🥃 ¡Hola %s! Bienvenido al Club VIP de *Admiral Whiskería*.\n\nYa estás registrado para acumular puntos y subir de nivel.\n\nAquí tienes tu cupón exclusivo del 10%% de descuento para tu primera visita: *BIENVENIDA10*", cust.Name)
+	
+	_, err := s.EnqueueOutbox(ctx, tenantID, cust.Phone, "text", "", &body, domain.JSONB{})
+	if err != nil {
+		slog.Error("whatsapp: failed to enqueue welcome message", "phone", cust.Phone, "err", err)
 	}
 }
 

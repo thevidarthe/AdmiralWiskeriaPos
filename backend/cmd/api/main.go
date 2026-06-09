@@ -226,6 +226,9 @@ func main() {
 
 	posH := pos.NewHandlers(posSvc, cfg)
 
+	crmH := crm.NewHandlers(crmSvc)
+	crmH.RegisterPublic(v1.Group("/crm/public"))
+
 	// Privadas (requieren JWT)
 	private := v1.Group("/", middleware.JWTAuth(jwtSvc))
 	branch.NewHandlers(branchSvc).Register(private.Group("/branches"))
@@ -234,9 +237,7 @@ func main() {
 	menu.NewHandlers(menuSvc).Register(private.Group("/menu"))
 	promotion.NewHandlers(promoSvc).Register(private.Group("/promotions"))
 	posH.Register(private.Group("/pos"))
-	crmH := crm.NewHandlers(crmSvc)
 	crmH.Register(private.Group("/crm"))
-	crmH.RegisterPublic(v1.Group("/crm/public"))
 	qrH.RegisterPrivate(private.Group("/qr"))
 	whatsapp.NewHandlers(waSvc).RegisterPrivate(private.Group("/whatsapp"))
 	report.NewHandlers(reportSvc).Register(private.Group("/reports"))

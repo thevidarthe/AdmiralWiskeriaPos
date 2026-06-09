@@ -89,6 +89,11 @@ func (s *Service) UpsertCustomer(ctx context.Context, tenantID string, in Upsert
 		if err := s.db.WithContext(ctx).Create(&c).Error; err != nil {
 			return nil, err
 		}
+		// Emitir evento para lógica secundaria (como bienvenida por WhatsApp o integraciones)
+		s.bus.Emit("customer.registered", map[string]any{
+			"tenantId": tenantID,
+			"customer": &c,
+		})
 	} else {
 		updates := map[string]any{}
 		if in.Name != "" {
@@ -402,6 +407,18 @@ func (h *Handlers) RegisterPublicCustomer(c *fiber.Ctx) error {
 	if err != nil {
 		return httpx.FromError(c, err)
 	}
+
+	// Registrar consentimiento automático para marketing y transaccional para clientes públicos registrados
+	_ = h.svc.RegisterConsent(c.Context(), out.ID, ConsentInput{
+		Type:    "transactional",
+		Channel: "whatsapp",
+		Active:  true,
+	})
+	_ = h.svc.RegisterConsent(c.Context(), out.ID, ConsentInput{
+		Type:    "marketing",
+		Channel: "whatsapp",
+		Active:  true,
+	})
 
 	return c.JSON(out)
 }
